@@ -9,6 +9,7 @@ public:
     double y;
     double z;
     double scalar;
+    volocity();
     volocity(double x,double y,double z);
 };
 #endif

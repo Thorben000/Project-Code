@@ -4,9 +4,9 @@
 #include <string>
 class face
 {
-private:
-    point* corners[3];//WARNING IF THE DATA IS NOT WRITTEN THERE IS NO DEAFAULT SAFTY NET !!!!!!!!!!!!!!!
 public:
+    point* corners[4];//WARNING IF THE DATA IS NOT WRITTEN THERE IS NO DEAFAULT SAFTY NET !!!!!!!!!!!!!!!
+    int owners[2];
     face();
     face(point corner1,point corner2,point corner3,point corner4);
 };

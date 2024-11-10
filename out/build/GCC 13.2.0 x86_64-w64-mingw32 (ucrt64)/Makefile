@@ -128,6 +128,30 @@ FluidSim/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\FluidSim.dir\build.make CMakeFiles/FluidSim.dir/build
 .PHONY : FluidSim/fast
 
+cell.obj: cell.cpp.obj
+.PHONY : cell.obj
+
+# target to build an object file
+cell.cpp.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\FluidSim.dir\build.make CMakeFiles/FluidSim.dir/cell.cpp.obj
+.PHONY : cell.cpp.obj
+
+cell.i: cell.cpp.i
+.PHONY : cell.i
+
+# target to preprocess a source file
+cell.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\FluidSim.dir\build.make CMakeFiles/FluidSim.dir/cell.cpp.i
+.PHONY : cell.cpp.i
+
+cell.s: cell.cpp.s
+.PHONY : cell.s
+
+# target to generate assembly for a file
+cell.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\FluidSim.dir\build.make CMakeFiles/FluidSim.dir/cell.cpp.s
+.PHONY : cell.cpp.s
+
 config.obj: config.cpp.obj
 .PHONY : config.obj
 
@@ -224,6 +248,30 @@ point.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\FluidSim.dir\build.make CMakeFiles/FluidSim.dir/point.cpp.s
 .PHONY : point.cpp.s
 
+volocity.obj: volocity.cpp.obj
+.PHONY : volocity.obj
+
+# target to build an object file
+volocity.cpp.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\FluidSim.dir\build.make CMakeFiles/FluidSim.dir/volocity.cpp.obj
+.PHONY : volocity.cpp.obj
+
+volocity.i: volocity.cpp.i
+.PHONY : volocity.i
+
+# target to preprocess a source file
+volocity.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\FluidSim.dir\build.make CMakeFiles/FluidSim.dir/volocity.cpp.i
+.PHONY : volocity.cpp.i
+
+volocity.s: volocity.cpp.s
+.PHONY : volocity.s
+
+# target to generate assembly for a file
+volocity.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\FluidSim.dir\build.make CMakeFiles/FluidSim.dir/volocity.cpp.s
+.PHONY : volocity.cpp.s
+
 # Help Target
 help:
 	@echo The following are some of the valid targets for this Makefile:
@@ -233,6 +281,9 @@ help:
 	@echo ... edit_cache
 	@echo ... rebuild_cache
 	@echo ... FluidSim
+	@echo ... cell.obj
+	@echo ... cell.i
+	@echo ... cell.s
 	@echo ... config.obj
 	@echo ... config.i
 	@echo ... config.s
@@ -245,6 +296,9 @@ help:
 	@echo ... point.obj
 	@echo ... point.i
 	@echo ... point.s
+	@echo ... volocity.obj
+	@echo ... volocity.i
+	@echo ... volocity.s
 .PHONY : help
 
 

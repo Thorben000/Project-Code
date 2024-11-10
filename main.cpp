@@ -5,6 +5,8 @@
 #include <fstream>
 #include <algorithm>
 #include "config.h"
+#include "volocity.h"
+#include "cell.h"
 
 /*
 ---------------------------------------------------------------------------
@@ -45,8 +47,11 @@ int main(int, char**){
     int debug_one;//this exists so we can enable debug mode for the first milestone
     int debug_one_step_one = 0;//this is unaccessable via config as I don't see a reason for it to be accessable as I only used it as step by step debuging!!!
     int debug_one_step_two = 0;
+    int debug_one_step_three = 0;
     int debug_two;//this exists so we can enable debug mode for the second milestone
     int debug_three;//this exists so we can enable debug mode for the third milestone
+    int cell_amount=-1;
+    int face_amount=-1;
     std::string dummy;
     if(config(&filePath,&debug_one,&debug_two,&debug_three) == 1){
         std::cout << "There was a error while loading the config file." << std::endl << "Enter anything to close the program." << std::endl;
@@ -74,7 +79,7 @@ int main(int, char**){
             std::cout<<"Line after processing (points) "<< line << std::endl;
         }
         //seperate into bits ex: "0 0 0" -> 3 values in a array
-        double* values = new double[2];
+        double values[3];
         int a = 0;
         std::string tempString = "";
         int debug;
@@ -136,6 +141,7 @@ int main(int, char**){
     }
     std::getline(face_file,line);
     number_of_entries = std::stoi(line);
+    face_amount = number_of_entries;
     std::getline(face_file,line);//gets rid of a unwanted line
     for(int i=0;i<number_of_entries;i++){
         std::getline(face_file,line);//get line
@@ -147,7 +153,7 @@ int main(int, char**){
             std::cout<<"Line after processing (face) "<< line << std::endl;
         }
         //seperate into bits ex: "0 0 0 0" -> 4 values in a array
-        double* values = new double[3];
+        double values[3];
         int a = 0;
         std::string tempString = "";
         int debug;
@@ -198,9 +204,107 @@ int main(int, char**){
     std::cout << "Done with the faces" <<std::endl;
     /*
     
-    Then we create the cells
+    then we read the face ownerships
     
     */
+    std::ifstream face_file(filePath+"/constant/polyMesh/owner");
+    number_of_entries=-1;
+    for(int i=0;i<20;i++){
+        std::getline(face_file,line);//skips the first 19 lines of the file unimportant
+    }
+    std::getline(face_file,line);
+    number_of_entries = std::stoi(line);
+    std::getline(face_file,line);//gets rid of a unwanted line
+    int value = 0;
+    for(int i=0;i<number_of_entries;i++){
+        std::getline(face_file,line);
+        if(debug_one==1){
+            std::cout <<"Atempting to convert to int:"<< line <<std::endl;
+            if(debug_one_step_three==1){
+                int a;
+                std::cin>>a;
+            }
+        }
+        value = std::stoi(line);
+        
+        
+        face_map[i].owners[0]= value;
+        if(debug_one==1){
+            std::cout <<"Set cell id "<< value <<" as owner of face" <<std::endl;
+            if(debug_one_step_three==1){
+                int a;
+                std::cin>>a;
+            }
+        }
+    }
+    face_file.close();
+    std::cout << "Done with the face ownership" <<std::endl;
+    /*
+    
+    then we read the face nighbours
+    
+    */
+   std::ifstream face_file(filePath+"/constant/polyMesh/neighour");
+    number_of_entries=-1;
+    for(int i=0;i<20;i++){
+        std::getline(face_file,line);//skips the first 19 lines of the file unimportant
+    }
+    std::getline(face_file,line);
+    number_of_entries = std::stoi(line);
+    std::getline(face_file,line);//gets rid of a unwanted line
+    int value = 0;
+    for(int i=0;i<number_of_entries;i++){
+        std::getline(face_file,line);
+        if(debug_one==1){
+            std::cout <<"Atempting to convert to int:"<< line <<std::endl;
+            if(debug_one_step_three==1){
+                int a;
+                std::cin>>a;
+            }
+        }
+        value = std::stoi(line);
+        
+        
+        face_map[i].owners[1]= value;
+        if(debug_one==1){
+            std::cout <<"Set cell id "<< value <<" as owner of face" <<std::endl;
+            if(debug_one_step_three==1){
+                int a;
+                std::cin>>a;
+            }
+        }
+    }
+    face_file.close();
+    std::cout << "Done with the face neighbours" <<std::endl;
+    /*
+    
+    now make the cells 
+    
+    */
+   std::unordered_map<int,cell> cell_map;
+    for(int i=0;i<face_amount;i++){
+        if(cell_map[face_map[i].owners[0]].exists || cell_map[face_map[i].owners[1]].exists){
+            cell_map[face_map[i].owners[0]].addFace(&face_map[i]);
+        }else{
+            cell_map[face_map[i].owners[0]].addFace(&face_map[i]);
+            cell_amount++;
+        }
+    }
+   /*
+   
+   now make the cells determine there nighbours and cell centers
+   
+   */
+   for(int i=0;i<cell_amount;i++){
+        cell_map[i].determineCenter();
+        cell_map[i].determineNeighbours(cell_map);
+   }
+   /*
+   
+   Now load volocities and begin simulation maths
+   
+   */
+   
     
     std::cin>>dummy;
     return 0;
