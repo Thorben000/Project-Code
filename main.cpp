@@ -7,6 +7,8 @@
 #include "config.h"
 #include "volocity.h"
 #include "cell.h"
+#include "loadVolocities.h"
+#include <thread>
 
 /*
 ---------------------------------------------------------------------------
@@ -24,6 +26,17 @@ bool toBeRemoved(char c)
     default:
         return false;
     }
+}
+void threadableMath(int cell_amount_thread,int cell_start_thread,int threadNR,int debug_one,std::unordered_map<int,cell> map){
+    for(int i=cell_start_thread;i<cell_amount_thread;i++){
+        if(map[i].exists){
+            map[i].determineCenter();
+            map[i].determineNeighbours(map);
+            if(debug_one){
+                std::cout<<"Run: "<<i<<"Of Thread NR."<<threadNR<<std::endl;
+            }  
+        }
+   }
 }
 
 /*
@@ -45,29 +58,40 @@ xx -> double digit numbers are for run time errors
 int main(int, char**){
     std::string filePath;
     int debug_one;//this exists so we can enable debug mode for the first milestone
-    int debug_one_step_one = 0;//this is unaccessable via config as I don't see a reason for it to be accessable as I only used it as step by step debuging!!!
-    int debug_one_step_two = 0;
-    int debug_one_step_three = 0;
+    int debug_one_step_one;//this is unaccessable via config as I don't see a reason for it to be accessable as I only used it as step by step debuging!!!
+    int debug_one_step_two;
+    int debug_one_step_three;
     int debug_two;//this exists so we can enable debug mode for the second milestone
     int debug_three;//this exists so we can enable debug mode for the third milestone
-    int cell_amount=-1;
-    int face_amount=-1;
+
+    double startTime;
+
+    int cell_amount=0;
+    int face_amount=0;
+
+    double increment = 0.01;
+
     std::string dummy;
-    if(config(&filePath,&debug_one,&debug_two,&debug_three) == 1){
+    if(config(&filePath,&debug_one,&debug_two,&debug_three,&startTime,&debug_one_step_one,&debug_one_step_two,&debug_one_step_three,&increment) == 1){
         std::cout << "There was a error while loading the config file." << std::endl << "Enter anything to close the program." << std::endl;
         std::cin;
         return 1;
     }
     std::cout << "Config loaded successfully" << std::endl;
-    /*First we read the points into the system*/
+    /*
+
+    First we read the points into the system
+    
+    */
     std::unordered_map<int,point> point_map;
     std::ifstream point_file(filePath+"/constant/polyMesh/points");
-    std::string line;
+    std::string line="ERROR";
     int number_of_entries=-1;
     for(int i=0;i<19;i++){
         std::getline(point_file,line);//skips the first 19 lines of the file unimportant
     }
     std::getline(point_file,line);
+    std::cout << filePath<<std::endl;
     number_of_entries = std::stoi(line);
     std::getline(point_file,line);//gets rid of a unwanted line
     for(int i=0;i<number_of_entries;i++){
@@ -94,7 +118,7 @@ int main(int, char**){
                         std::cout <<"trying to convert: "<< tempString << std::endl;
                         std::cout << std::endl << " current value[" << j <<"] = "<< values[j] <<std::endl;
                         if(debug_one_step_one==1){
-                            std::cin>>a;
+                            std::cin>>dummy;
                         }
                     }
                     values[j]=std::stod(tempString);
@@ -103,7 +127,7 @@ int main(int, char**){
                     if(debug_one==1){
                         std::cout <<"the conversion: "<< std::stod(tempString) << std::endl << " new value[" << j <<"] = "<< values[j] <<std::endl<<" the temp string was reste to: |"<<tempString<<std::endl;
                         if(debug_one_step_one==1){
-                            std::cin>>a;
+                            std::cin>>dummy;
                         }
                     }
                     tempString="";
@@ -153,13 +177,13 @@ int main(int, char**){
             std::cout<<"Line after processing (face) "<< line << std::endl;
         }
         //seperate into bits ex: "0 0 0 0" -> 4 values in a array
-        double values[3];
+        double values[4];
         int a = 0;
         std::string tempString = "";
         int debug;
         int j=0;
-        while(j<3){
-            while(a<line.size()){
+        while(j<4){
+            while(a<line.size()&&j<4){
                 if(debug_one==1){
                     std::cout <<"current character:"<< line[a]<<std::endl<<"Current value of a: " << a<<std::endl;
                 }
@@ -168,8 +192,13 @@ int main(int, char**){
                         std::cout <<"trying to convert: "<< tempString << std::endl;
                         std::cout << std::endl << " current value[" << j <<"] = "<< values[j] <<std::endl;
                         if(debug_one_step_two==1){
-                            std::cin>>a;
+                            std::cin>>dummy;
                         }
+                    }
+                    if(tempString==" "){
+                        std::cout<<"SOMETHING MESSED UP"<<std::endl;
+                        std::cin >> dummy;
+                        return 1;
                     }
                     values[j]=std::stoi(tempString);
                     
@@ -177,7 +206,7 @@ int main(int, char**){
                     if(debug_one==1){
                         std::cout <<"the conversion: "<< std::stoi(tempString) << std::endl << " new value[" << j <<"] = "<< values[j] <<std::endl<<" the temp string was reste to: |"<<tempString<<std::endl;
                         if(debug_one_step_two==1){
-                            std::cin>>a;
+                            std::cin>>dummy;
                         }
                     }
                     tempString="";
@@ -205,24 +234,24 @@ int main(int, char**){
     /*
     
     then we read the face ownerships
-    
+
     */
-    std::ifstream face_file(filePath+"/constant/polyMesh/owner");
+    std::ifstream face_file_o(filePath+"/constant/polyMesh/owner");
     number_of_entries=-1;
     for(int i=0;i<20;i++){
-        std::getline(face_file,line);//skips the first 19 lines of the file unimportant
+        std::getline(face_file_o,line);//skips the first 19 lines of the file unimportant
     }
-    std::getline(face_file,line);
+    std::getline(face_file_o,line);
     number_of_entries = std::stoi(line);
-    std::getline(face_file,line);//gets rid of a unwanted line
+    std::getline(face_file_o,line);//gets rid of a unwanted line
     int value = 0;
     for(int i=0;i<number_of_entries;i++){
-        std::getline(face_file,line);
+        std::getline(face_file_o,line);
         if(debug_one==1){
             std::cout <<"Atempting to convert to int:"<< line <<std::endl;
             if(debug_one_step_three==1){
                 int a;
-                std::cin>>a;
+                std::cin>>dummy;
             }
         }
         value = std::stoi(line);
@@ -230,51 +259,50 @@ int main(int, char**){
         
         face_map[i].owners[0]= value;
         if(debug_one==1){
-            std::cout <<"Set cell id "<< value <<" as owner of face" <<std::endl;
+            std::cout<< std::endl <<"Set cell id "<< value <<" as owner of face id"<< i <<std::endl;
             if(debug_one_step_three==1){
                 int a;
                 std::cin>>a;
             }
         }
     }
-    face_file.close();
+    face_file_o.close();
     std::cout << "Done with the face ownership" <<std::endl;
     /*
     
     then we read the face nighbours
     
     */
-   std::ifstream face_file(filePath+"/constant/polyMesh/neighour");
+
+    std::ifstream face_file_n(filePath+"/constant/polyMesh/neighbour");
     number_of_entries=-1;
     for(int i=0;i<20;i++){
-        std::getline(face_file,line);//skips the first 19 lines of the file unimportant
+        std::getline(face_file_n,line);//skips the first 19 lines of the file unimportant
     }
-    std::getline(face_file,line);
+    std::getline(face_file_n,line);
     number_of_entries = std::stoi(line);
-    std::getline(face_file,line);//gets rid of a unwanted line
-    int value = 0;
+    std::getline(face_file_n,line);//gets rid of a unwanted line
+    int value_i = 0;
     for(int i=0;i<number_of_entries;i++){
-        std::getline(face_file,line);
+        std::getline(face_file_n,line);
         if(debug_one==1){
             std::cout <<"Atempting to convert to int:"<< line <<std::endl;
             if(debug_one_step_three==1){
-                int a;
-                std::cin>>a;
+                std::cin>>dummy;
             }
         }
-        value = std::stoi(line);
+        value_i = std::stoi(line);
+        line = "-1";
         
-        
-        face_map[i].owners[1]= value;
+        face_map[i].owners[1]= value_i;
         if(debug_one==1){
-            std::cout <<"Set cell id "<< value <<" as owner of face" <<std::endl;
+            std::cout<< std::endl <<"Set cell id "<< value_i <<" as owner of face id"<< i <<std::endl;
             if(debug_one_step_three==1){
-                int a;
-                std::cin>>a;
+                std::cin>>dummy;
             }
         }
     }
-    face_file.close();
+    face_file_n.close();
     std::cout << "Done with the face neighbours" <<std::endl;
     /*
     
@@ -283,27 +311,93 @@ int main(int, char**){
     */
    std::unordered_map<int,cell> cell_map;
     for(int i=0;i<face_amount;i++){
-        if(cell_map[face_map[i].owners[0]].exists || cell_map[face_map[i].owners[1]].exists){
-            cell_map[face_map[i].owners[0]].addFace(&face_map[i]);
-        }else{
-            cell_map[face_map[i].owners[0]].addFace(&face_map[i]);
-            cell_amount++;
+        bool tempbool=false;
+        if(debug_one){
+            std::cout<<std::endl<<"#####################################"<<std::endl<<"Showing face ID:"<<i<<std::endl<<"Owner 0: "<<face_map[i].owners[0]<<std::endl;
+            std::cout<<"Owner 1: "<<face_map[i].owners[1]<<std::endl;
         }
+        if(cell_map[face_map[i].owners[0]].exists && face_map[i].owners[0]!= -1){
+            cell_map[face_map[i].owners[0]].addFace(&face_map[i]);
+            if(debug_one){
+                std::cout<<"Declared additional face for Cell:"<<face_map[i].owners[0]<<std::endl;
+            }
+        }else{
+            if(face_map[i].owners[0]!= -1){
+                cell_map[face_map[i].owners[0]] = cell();
+                cell_map[face_map[i].owners[0]].addFace(&face_map[i]);
+                tempbool=true;
+                if(debug_one){
+                std::cout<<"Declared Cell:"<<face_map[i].owners[0]<<std::endl;
+                }
+            }
+        }
+        if ( cell_map[face_map[i].owners[1]].exists && face_map[i].owners[1]!= -1)
+        {
+           cell_map[face_map[i].owners[1]].addFace(&face_map[i]);
+           if(debug_one){
+                std::cout<<"Declared additional face for Cell:"<<face_map[i].owners[1]<<std::endl;
+            }
+        }else{
+            if(face_map[i].owners[1]!= -1){
+                cell_map[face_map[i].owners[1]] = cell();
+                cell_map[face_map[i].owners[1]].addFace(&face_map[i]);
+                tempbool=true;
+                if(debug_one){
+                    std::cout<<"Declared Cell:"<<face_map[i].owners[1]<<std::endl;
+                }
+            }    
+        }
+        if (tempbool){cell_amount++;}   
     }
+    std::cout <<"Done with cell creation"<<std::endl;
+    std::cout<<"cell amount:"<<cell_amount<<std::endl;
    /*
    
    now make the cells determine there nighbours and cell centers
+
+   we are using threading as is speeds up the loading
+   first we spread the load based on the increments
    
    */
+  if(cell_amount>25000){
+    
+    int thread_load=cell_amount*increment;//int rounding is intended
+    int num_threads = cell_amount/thread_load;
+    int completed_cells=0;
+    if(cell_amount%thread_load>0){
+        num_threads++;
+    }
+    std::cout<<"trying to create Threads number:"<<num_threads<<std::endl;
+    std::thread* threads[num_threads];
+
+    for(int i=0;i<num_threads;i++){
+        threads[i] = new std::thread(threadableMath,completed_cells,i*thread_load,i,debug_one,cell_map);
+    }
+    std::cout<<"Threads created"<<std::endl;
+    for(int i=0;i<num_threads;i++){
+        threads[i]->join();
+    }
+  }else{
+    double passed_increments = 0.0;
    for(int i=0;i<cell_amount;i++){
         cell_map[i].determineCenter();
         cell_map[i].determineNeighbours(cell_map);
+        if((i*1.0)/cell_amount-increment-passed_increments>0.0){
+            passed_increments+=increment;
+            std::cout<<"Cell math done to "<<(i*1.0)/cell_amount<<std::endl;
+        }
+        if(debug_one){
+            std::cout<<"Run: "<<i<<std::endl;
+        }  
    }
+  }
+   std::cout <<"Done with cell computations"<<std::endl;
    /*
    
    Now load volocities and begin simulation maths
    
    */
+    volocityLoad(cell_map,startTime,filePath);
    
     
     std::cin>>dummy;

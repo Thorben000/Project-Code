@@ -5,11 +5,13 @@
 #include "face.h"
 #include "point.h"
 #include <unordered_map>
+#include <iostream>
 cell::cell(){exists = false;declaredFaces=0;};
 
 void cell::addFace(face* face){
     faces[declaredFaces] = face;
     declaredFaces++;
+    exists = true;
     return;
 }
 
@@ -47,6 +49,12 @@ void cell::determineNeighbours(std::unordered_map<int,cell> map){
 void cell::determineCenter(){
     double lowerPoint[3];// index:representation; 0:x 1:y 2:z
     double higherPoint[3];
+    if(declaredFaces!=6){
+        int dummy;
+        std::cout<<"SOMETHING MESSED UP IN CELL LOADING THIS ONE ONLY HAS:"<<declaredFaces<<" FACES DECLARED"<<std::endl;
+        std::cin>>dummy;
+        return;
+    }
     for(int i=0;i<3;i++){
         lowerPoint[i] = -1;
         higherPoint[i] = -1;

@@ -10,11 +10,12 @@ class cell
 private:
     point center;
     face* faces[6];//WARNING IF THE DATA IS NOT WRITTEN THERE IS NO DEAFAULT SAFTY NET !!!!!!!!!!!!!!!
-    volocity internalVolocity;
+    
     cell* neighbours[6];
     
     int declaredFaces;
 public:
+    volocity internalVolocity;
     bool exists;
     cell();
     cell(face* face1,face* face2,face* face3,face* face4,face* face5,face* face6);

@@ -1,9 +1,19 @@
 Name of Dataset:
-Wuerfel
+Simulation_Umstroemung_eines_Wuerfels
 Debug mode one:
-1
+0
+Debug mode one stepping one:
+0
+Debug mode one stepping two:
+0
+Debug mode one stepping three:
+0
 Debug mode two:
 0
 Debug mode three:
 0
+Start time:
+0.2
+Increment for threads(above 25000 cells):
+0.01
 <<END>>
