@@ -8,6 +8,7 @@ public:
     double x;
     double y;
     double z;
+    int id;
     point();
     point(double x,double y,double z);
 };
