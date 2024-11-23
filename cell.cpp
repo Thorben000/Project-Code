@@ -37,19 +37,21 @@ void cell::determineNeighbours(std::unordered_map<int,cell> map){
     std::cout<<"Doing cellID: "<<id<<std::endl;
     std::cout<<"owned faces: "<<printFaces()<<std::endl;
     for(int i=0;i<6;i++){
-        std::cout<<" nighbouris option 1 is:"<<map[faces[i].owners[0]].id<<std::endl;
-        std::cout<<" nighbouris option 2 is:"<<map[faces[i].owners[1]].id<<std::endl;
-        std::cout<<" self is:"<<id<<std::endl;
+        //std::cout<<" nighbouris option 1 is:"<<map[faces[i].owners[0]].id<<std::endl;
+        //std::cout<<" nighbouris option 2 is:"<<map[faces[i].owners[1]].id<<std::endl;
+        //std::cout<<" self is:"<<id<<std::endl;
+        if(map[faces[i].owners[0]].id!=faces[i].owners[0] && faces[i].owners[0]!=-1){std::cout<<"ERROR Cell ID"<<map[faces[i].owners[0]].id<<" at "<<faces[i].owners[0]<<std::endl;}
+        if(map[faces[i].owners[1]].id!=faces[i].owners[1] && faces[i].owners[1]!=-1){std::cout<<"ERROR Cell ID"<<map[faces[i].owners[1]].id<<" at "<<faces[i].owners[1]<<std::endl;}
         if(id != (map[faces[i].owners[0]]).id){
             key[i] = map[faces[i].owners[0]].id;//sets the first owner as nighbour if it is not self
-            std::cout<<" chosen was: "<<map[faces[i].owners[0]].id<<std::endl;
+            //std::cout<<" chosen was: "<<map[faces[i].owners[0]].id<<std::endl;
         }else if (faces[i].owners[1]==-1)
         {
             key[i] = id;//sets self as nighbour if the second owner does not exist
-            std::cout<<"Self nighbour"<<std::endl;
+            //std::cout<<"Self nighbour"<<std::endl;
         }else{
             key[i] = map[faces[i].owners[1]].id;//sets second owner as nighbour
-            std::cout<<" chosen was:  "<<map[faces[i].owners[1]].id<<std::endl;
+            //std::cout<<" chosen was:  "<<map[faces[i].owners[1]].id<<std::endl;
         }
         
     }

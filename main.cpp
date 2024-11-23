@@ -338,7 +338,7 @@ int main(int, char**){
         }else{
             if(face_map[i].owners[0]!= -1){
                 cell_map[face_map[i].owners[0]] = cell();
-                cell_map[face_map[i].owners[0]].id = cell_amount;
+                cell_map[face_map[i].owners[0]].id = face_map[i].owners[0];
                 cell_map[face_map[i].owners[0]].addFace(face_map[i]);
                 tempbool=true;
                 cell_amount++;
@@ -356,7 +356,7 @@ int main(int, char**){
         }else{
             if(face_map[i].owners[1]!= -1){
                 cell_map[face_map[i].owners[1]] = cell();
-                cell_map[face_map[i].owners[1]].id = cell_amount;
+                cell_map[face_map[i].owners[1]].id = face_map[i].owners[1];
                 cell_map[face_map[i].owners[1]].addFace(face_map[i]);
                 tempbool=true;
                 cell_amount++;
