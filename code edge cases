@@ -1,0 +1,2 @@
+This code can't handle any time frame bellow 0.1 as if the time interval is turned down to 0.01 the code is UNABLE to process this. There are possible solutions but implmenting them was seen as none mandetory at the time
+The code can only acomidate 333 possible time intervals at the same time

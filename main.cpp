@@ -14,7 +14,11 @@
 
 helper functions go down here
 */
-
+class cellMapSaver{
+    public:
+    std::unordered_map<int,cell> map;
+    cellMapSaver(){};
+};
 void printValues(std::unordered_map<int,cell> map, int cellamount){
     std::cout<<"Amount cells: "<<cellamount<<std::endl;
     for(int i=0;i<cellamount;i++){
@@ -34,11 +38,12 @@ bool toBeRemoved(char c)
         return false;
     }
 }
-void threadableMath(int cell_amount_thread,int cell_start_thread,int threadNR,int debug_one,std::unordered_map<int,cell> map){
+
+void threadableMath(int cell_amount_thread,int cell_start_thread,int threadNR,int debug_one,cellMapSaver* cellMap){
     for(int i=cell_start_thread;i<cell_amount_thread;i++){
-        if(map[i].exists){
-            map[i].determineCenter();
-            map[i].determineNeighbours(map);
+        if(cellMap->map[i].exists){
+            cellMap->map[i].determineCenter();
+            cellMap->map[i].determineNeighbours(cellMap->map);
             if(debug_one){
                 std::cout<<"Run: "<<i<<"Of Thread NR."<<threadNR<<std::endl;
             }  
@@ -62,6 +67,7 @@ xx -> double digit numbers are for run time errors
 1 --> Error during config loading
 */
 
+
 int main(int, char**){
     std::string filePath;
     int debug_one;//this exists so we can enable debug mode for the first milestone
@@ -70,8 +76,11 @@ int main(int, char**){
     int debug_one_step_three;
     int debug_two;//this exists so we can enable debug mode for the second milestone
     int debug_three;//this exists so we can enable debug mode for the third milestone
+    cellMapSaver cells = cellMapSaver();
 
     double startTime;
+    double* CalculateSteps = new double[999];
+    int numberCalculateSteps;
 
     int cell_amount=0;
     int face_amount=0;
@@ -79,12 +88,19 @@ int main(int, char**){
     double increment = 0.01;
 
     std::string dummy;
-    if(config(&filePath,&debug_one,&debug_two,&debug_three,&startTime,&debug_one_step_one,&debug_one_step_two,&debug_one_step_three,&increment) == 1){
+    if(config(&filePath,&debug_one,&debug_two,&debug_three,&startTime,&debug_one_step_one,&debug_one_step_two,&debug_one_step_three,&increment,CalculateSteps,&numberCalculateSteps) == 1){
         std::cout << "There was a error while loading the config file." << std::endl << "Enter anything to close the program." << std::endl;
         std::cin;
         return 1;
     }
     std::cout << "Config loaded successfully" << std::endl;
+
+    std::cout << "Calc number entries is:" << numberCalculateSteps<<" content:"<<std::endl;
+    for(int i=0;i<numberCalculateSteps*3;i++){
+        std::cout<<CalculateSteps[i]<<std::endl;
+    }
+    
+
     /*
 
     First we read the points into the system
@@ -154,7 +170,7 @@ int main(int, char**){
         //create point 
         point_map[i] = point(values[0],values[1],values[2]);
         point_map[i].id=i;
-        if(debug_two == 1){
+        if(debug_one == 1){
             std::cout<<"Point object: x: "<< point_map[i].x << " y: "<< point_map[i].y << " z: "<< point_map[i].z << std::endl;
         }
     }
@@ -323,23 +339,22 @@ int main(int, char**){
     now make the cells 
     
     */
-   std::unordered_map<int,cell> cell_map;
     for(int i=0;i<face_amount;i++){
         bool tempbool=false;
         if(debug_one){
             std::cout<<std::endl<<"#####################################"<<std::endl<<"Showing face ID:"<<i<<std::endl<<"Owner 0: "<<face_map[i].owners[0]<<std::endl;
             std::cout<<"Owner 1: "<<face_map[i].owners[1]<<std::endl;
         }
-        if(cell_map[face_map[i].owners[0]].exists && face_map[i].owners[0]!= -1){
-            cell_map[face_map[i].owners[0]].addFace(face_map[i]);
+        if(cells.map[face_map[i].owners[0]].exists && face_map[i].owners[0]!= -1){
+            cells.map[face_map[i].owners[0]].addFace(face_map[i]);
             if(debug_one){
                 std::cout<<"Declared additional face for Cell:"<<face_map[i].owners[0]<<std::endl;
             }
         }else{
             if(face_map[i].owners[0]!= -1){
-                cell_map[face_map[i].owners[0]] = cell();
-                cell_map[face_map[i].owners[0]].id = face_map[i].owners[0];
-                cell_map[face_map[i].owners[0]].addFace(face_map[i]);
+                cells.map[face_map[i].owners[0]] = cell();
+                cells.map[face_map[i].owners[0]].id = face_map[i].owners[0];
+                cells.map[face_map[i].owners[0]].addFace(face_map[i]);
                 tempbool=true;
                 cell_amount++;
                 if(debug_one){
@@ -347,17 +362,17 @@ int main(int, char**){
                 }
             }
         }
-        if ( cell_map[face_map[i].owners[1]].exists && face_map[i].owners[1]!= -1)
+        if ( cells.map[face_map[i].owners[1]].exists && face_map[i].owners[1]!= -1)
         {
-           cell_map[face_map[i].owners[1]].addFace(face_map[i]);
+           cells.map[face_map[i].owners[1]].addFace(face_map[i]);
            if(debug_one){
                 std::cout<<"Declared additional face for Cell:"<<face_map[i].owners[1]<<std::endl;
             }
         }else{
             if(face_map[i].owners[1]!= -1){
-                cell_map[face_map[i].owners[1]] = cell();
-                cell_map[face_map[i].owners[1]].id = face_map[i].owners[1];
-                cell_map[face_map[i].owners[1]].addFace(face_map[i]);
+                cells.map[face_map[i].owners[1]] = cell();
+                cells.map[face_map[i].owners[1]].id = face_map[i].owners[1];
+                cells.map[face_map[i].owners[1]].addFace(face_map[i]);
                 tempbool=true;
                 cell_amount++;
                 if(debug_one){
@@ -388,7 +403,7 @@ int main(int, char**){
     std::thread* threads[num_threads];
 
     for(int i=0;i<num_threads;i++){
-        threads[i] = new std::thread(threadableMath,completed_cells,i*thread_load,i,debug_one,cell_map);
+        threads[i] = new std::thread(threadableMath,completed_cells,i*thread_load,i,debug_one,&cells);
     }
     std::cout<<"Threads created"<<std::endl;
     for(int i=0;i<num_threads;i++){
@@ -397,8 +412,8 @@ int main(int, char**){
   }else{
     double passed_increments = 0.0;
    for(int i=0;i<cell_amount;i++){
-        cell_map[i].determineCenter();
-        cell_map[i].determineNeighbours(cell_map);
+        cells.map[i].determineCenter();
+        cells.map[i].determineNeighbours(cells.map);
         if((i*1.0)/cell_amount-increment-passed_increments>0.0){
             passed_increments+=increment;
             std::cout<<"Cell math done to "<<(i*1.0)/cell_amount<<std::endl;
@@ -414,84 +429,99 @@ int main(int, char**){
    Now load volocities and begin simulation maths
    
    */
-    //volocityLoad(&cell_map,startTime,filePath);
-    std::string fileNumber = std::to_string(startTime);
-    std::string fileNumberExtracted = "";
-    int a=0;
-    bool is_integer=false;
-    while(fileNumber[a]!='.'){
-        fileNumberExtracted+=fileNumber[a];
-        a++;
-        if(a>fileNumber.length()){
-            is_integer = true;
-            break;
-        }
-    }
-    if(is_integer){
-        fileNumberExtracted=fileNumber;
-    }else{
-        fileNumberExtracted+=fileNumber[a];//(adds the dot)
-        a++;
-        while(fileNumber[a]!='0'){
-            fileNumberExtracted+=fileNumber[a];
-            a++;
-        }
-    }
-    filePath += "/";
-    filePath += fileNumberExtracted;
-    filePath += "/U";
-    std::cout<<filePath<<std::endl;
-    std::cin>>dummy;
-    std::ifstream volocity_file(filePath);
-    line="";
-    number_of_entries=-1;
-    for(int i=0;i<21;i++){
-        std::getline(volocity_file,line);//skips the first 19 lines of the file unimportant
-    }
-    std::getline(volocity_file,line);
-    if(volocity_file.is_open()==false){
-        std::cout<<"FILE FAILED TO OPEN"<<std::endl;
-        std::cin>>line;
-    }
-    std::cout<<line<<std::endl;
-    number_of_entries = std::stoi(line);
-    std::getline(volocity_file,line);//gets rid of a unwanted line
-    for(int i=0;i<number_of_entries;i++){
-        std::getline(volocity_file,line);//get line
-        //remmove brakets  ex: "(0 0 0)"" --> "0 0 0 "
-        line.erase(std::remove_if(line.begin(),line.end(),toBeRemoved),line.end());
-        line += ' ';
-
-        //seperate into bits ex: "0 0 0" -> 3 values in a array
-        double values[3];
-        int a = 0;
-        std::string tempString = "";
-        int debug;
-        int j=0;
-        while(j<2){
-            while(a<line.size()){
-                if(line[a]==' '){
-                    values[j]=std::stod(tempString);
-                    tempString="";
-                    j++;
-                    
-                }else{
-                    tempString += line[a];
-                }
-                a++;
-            }
-            a=0;
-        }
-        cell_map[i].internalVolocity = volocity(values[0],values[1],values[2]);
-    }
-    volocity_file.close();
-    std::cout << "Done loading volocities" <<std::endl;
-
-    if(debug_two){
-        printValues(cell_map,cell_amount);
-    }
-   
+    //volocityLoad(&cells.map,startTime,filePath);
     
+    
+    //std::cout<<line<<std::endl;
+    double start;
+    double end;
+    double increment_time;
+    std::string filePath_volocities;
+    for(int i=0;i<number_of_entries;i++){
+        start = CalculateSteps[i];
+        end = CalculateSteps[i+1];
+        increment_time = CalculateSteps[i+2];
+        for(double n=start;n<=end;n+=increment_time){
+            std::string fileNumber = std::to_string(n);
+            std::string fileNumberExtracted = "";
+            int a=0;
+            bool is_integer=false;
+            while(fileNumber[a]!='.'){
+                fileNumberExtracted+=fileNumber[a];
+                a++;
+                if(a>fileNumber.length()){
+                    is_integer = true;
+                    break;
+                }
+            }
+            if(is_integer){
+                fileNumberExtracted=fileNumber;
+            }else{
+                fileNumberExtracted+=fileNumber[a];//(adds the dot)
+                a++;
+                while(fileNumber[a]!='0'){
+                    fileNumberExtracted+=fileNumber[a];
+                    a++;
+                }
+            }
+            filePath_volocities = filePath;
+            filePath_volocities += "/";
+            filePath_volocities += fileNumberExtracted;
+            filePath_volocities += "/U";
+            std::cout<<filePath_volocities<<std::endl;
+            std::cin>>dummy;
+            std::ifstream volocity_file(filePath_volocities);
+            line="";
+            number_of_entries=-1;
+            for(int i=0;i<21;i++){
+                std::getline(volocity_file,line);//skips the first 19 lines of the file unimportant
+            }
+            std::getline(volocity_file,line);
+            if(volocity_file.is_open()==false){
+                std::cout<<"FILE FAILED TO OPEN"<<std::endl;
+                std::cin>>line;
+            }
+            number_of_entries = std::stoi(line);
+            std::getline(volocity_file,line);//gets rid of a unwanted line
+            for(int i=0;i<number_of_entries;i++){
+                std::getline(volocity_file,line);//get line
+                //remmove brakets  ex: "(0 0 0)"" --> "0 0 0 "
+                line.erase(std::remove_if(line.begin(),line.end(),toBeRemoved),line.end());
+                line += ' ';
+
+                //seperate into bits ex: "0 0 0" -> 3 values in a array
+                double values[3];
+                int a = 0;
+                std::string tempString = "";
+                int debug;
+                int j=0;
+                while(j<2){
+                    while(a<line.size()){
+                        if(line[a]==' '){
+                            values[j]=std::stod(tempString);
+                            tempString="";
+                            j++;
+                            
+                        }else{
+                            tempString += line[a];
+                        }
+                        a++;
+                    }
+                    a=0;
+                }
+                cells.map[i].internalVolocity = volocity(values[0],values[1],values[2]);
+            }
+            volocity_file.close();
+            std::cout << "Done loading volocities" <<std::endl;
+            if(debug_two){
+                printValues(cells.map,cell_amount);
+                std::cin >> dummy;
+            }
+            
+
+
+        }
+    }
     std::cin>>dummy;
     return 0;
 }

@@ -10,10 +10,10 @@ cell::cell(){exists = false;declaredFaces=0;};
 
 void cell::addFace(face face){
     faces[declaredFaces] = face;
-    std::cout<<face.id<<std::endl;
+    //std::cout<<face.id<<std::endl;
     declaredFaces+=1;
     exists = true;
-    std::cout<<"Cell id:"<<id<<std::endl<<"current faces:"<<printFaces()<<std::endl;
+    //std::cout<<"Cell id:"<<id<<std::endl<<"current faces:"<<printFaces()<<std::endl;
     return;
 }
 
@@ -34,8 +34,8 @@ cell::cell(face face1,face face2,face face3,face face4,face face5,face face6){
 
 
 void cell::determineNeighbours(std::unordered_map<int,cell> map){
-    std::cout<<"Doing cellID: "<<id<<std::endl;
-    std::cout<<"owned faces: "<<printFaces()<<std::endl;
+    //std::cout<<"Doing cellID: "<<id<<std::endl;
+    //std::cout<<"owned faces: "<<printFaces()<<std::endl;
     for(int i=0;i<6;i++){
         //std::cout<<" nighbouris option 1 is:"<<map[faces[i].owners[0]].id<<std::endl;
         //std::cout<<" nighbouris option 2 is:"<<map[faces[i].owners[1]].id<<std::endl;
