@@ -40,15 +40,17 @@ bool toBeRemoved(char c)
 }
 
 void threadableMath(int cell_amount_thread,int cell_start_thread,int threadNR,int debug_one,cellMapSaver* cellMap){
+    std::cout<<cell_start_thread<<"  "<< cell_amount_thread<<std::endl;
     for(int i=cell_start_thread;i<cell_amount_thread;i++){
         if(cellMap->map[i].exists){
-            cellMap->map[i].determineCenter();
-            cellMap->map[i].determineNeighbours(cellMap->map);
+            //cellMap->map[i].determineCenter();
+            //cellMap->map[i].determineNeighbours(cellMap->map);
             if(debug_one){
                 std::cout<<"Run: "<<i<<"Of Thread NR."<<threadNR<<std::endl;
             }  
         }
    }
+   std::cout<<"Thread completed"<<std::endl;
 }
 
 /*
@@ -347,6 +349,7 @@ int main(int, char**){
         }
         if(cells.map[face_map[i].owners[0]].exists && face_map[i].owners[0]!= -1){
             cells.map[face_map[i].owners[0]].addFace(face_map[i]);
+            cells.map[face_map[i].owners[0]].addNighbour(face_map[i].owners[1]);
             if(debug_one){
                 std::cout<<"Declared additional face for Cell:"<<face_map[i].owners[0]<<std::endl;
             }
@@ -355,6 +358,7 @@ int main(int, char**){
                 cells.map[face_map[i].owners[0]] = cell();
                 cells.map[face_map[i].owners[0]].id = face_map[i].owners[0];
                 cells.map[face_map[i].owners[0]].addFace(face_map[i]);
+                cells.map[face_map[i].owners[0]].addNighbour(face_map[i].owners[1]);
                 tempbool=true;
                 cell_amount++;
                 if(debug_one){
@@ -365,6 +369,7 @@ int main(int, char**){
         if ( cells.map[face_map[i].owners[1]].exists && face_map[i].owners[1]!= -1)
         {
            cells.map[face_map[i].owners[1]].addFace(face_map[i]);
+           cells.map[face_map[i].owners[0]].addNighbour(face_map[i].owners[0]);
            if(debug_one){
                 std::cout<<"Declared additional face for Cell:"<<face_map[i].owners[1]<<std::endl;
             }
@@ -373,6 +378,7 @@ int main(int, char**){
                 cells.map[face_map[i].owners[1]] = cell();
                 cells.map[face_map[i].owners[1]].id = face_map[i].owners[1];
                 cells.map[face_map[i].owners[1]].addFace(face_map[i]);
+                cells.map[face_map[i].owners[0]].addNighbour(face_map[i].owners[0]);
                 tempbool=true;
                 cell_amount++;
                 if(debug_one){
@@ -381,6 +387,23 @@ int main(int, char**){
             }    
         }
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     std::cout <<"Done with cell creation"<<std::endl;
     std::cout<<"cell amount:"<<cell_amount<<std::endl;
    /*
@@ -391,6 +414,7 @@ int main(int, char**){
    first we spread the load based on the increments
    
    */
+  /*
   if(cell_amount>25000){
     
     int thread_load=cell_amount*increment;//int rounding is intended
@@ -403,7 +427,7 @@ int main(int, char**){
     std::thread* threads[num_threads];
 
     for(int i=0;i<num_threads;i++){
-        threads[i] = new std::thread(threadableMath,completed_cells,i*thread_load,i,debug_one,&cells);
+        threads[i] = new std::thread(threadableMath,thread_load*(i+1),(i)*thread_load,i,debug_one,&cells);
     }
     std::cout<<"Threads created"<<std::endl;
     for(int i=0;i<num_threads;i++){
@@ -422,7 +446,7 @@ int main(int, char**){
             std::cout<<"Run: "<<i<<std::endl;
         }  
    }
-  }
+  }*/
    std::cout <<"Done with cell computations"<<std::endl;
    /*
    
@@ -437,6 +461,8 @@ int main(int, char**){
     double end;
     double increment_time;
     std::string filePath_volocities;
+    std::string filePath_centers;
+    std::string C_line;
     for(int i=0;i<number_of_entries;i++){
         start = CalculateSteps[i];
         end = CalculateSteps[i+1];
@@ -467,32 +493,44 @@ int main(int, char**){
             filePath_volocities = filePath;
             filePath_volocities += "/";
             filePath_volocities += fileNumberExtracted;
+            filePath_centers = filePath_volocities;
+            filePath_centers += "/C";
             filePath_volocities += "/U";
             std::cout<<filePath_volocities<<std::endl;
             std::cin>>dummy;
             std::ifstream volocity_file(filePath_volocities);
+            std::ifstream center_file(filePath_centers);
             line="";
+            C_line="";
             number_of_entries=-1;
             for(int i=0;i<21;i++){
                 std::getline(volocity_file,line);//skips the first 19 lines of the file unimportant
+                std::getline(center_file,C_line);
             }
             std::getline(volocity_file,line);
+            std::getline(center_file,C_line);
             if(volocity_file.is_open()==false){
                 std::cout<<"FILE FAILED TO OPEN"<<std::endl;
                 std::cin>>line;
             }
             number_of_entries = std::stoi(line);
             std::getline(volocity_file,line);//gets rid of a unwanted line
+            std::getline(center_file,C_line);
             for(int i=0;i<number_of_entries;i++){
                 std::getline(volocity_file,line);//get line
+                std::getline(center_file,C_line);
                 //remmove brakets  ex: "(0 0 0)"" --> "0 0 0 "
                 line.erase(std::remove_if(line.begin(),line.end(),toBeRemoved),line.end());
                 line += ' ';
+                C_line.erase(std::remove_if(C_line.begin(),C_line.end(),toBeRemoved),C_line.end());
+                C_line += ' ';
 
                 //seperate into bits ex: "0 0 0" -> 3 values in a array
                 double values[3];
+                double c_value[3];
                 int a = 0;
                 std::string tempString = "";
+                std::string C_tempString = "";
                 int debug;
                 int j=0;
                 while(j<2){
@@ -509,7 +547,23 @@ int main(int, char**){
                     }
                     a=0;
                 }
+                j=0;
+                while(j<2){
+                    while(a<C_line.size()){
+                        if(C_line[a]==' '){
+                            c_value[j]=std::stod(C_tempString);
+                            C_tempString="";
+                            j++;
+                            
+                        }else{
+                            C_tempString += C_line[a];
+                        }
+                        a++;
+                    }
+                    a=0;
+                }
                 cells.map[i].internalVolocity = volocity(values[0],values[1],values[2]);
+                cells.map[i].center = point(c_value[0],c_value[1],c_value[2]);
             }
             volocity_file.close();
             std::cout << "Done loading volocities" <<std::endl;

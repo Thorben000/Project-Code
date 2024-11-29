@@ -8,14 +8,15 @@
 class cell
 {
 private:
-    point center;
+    
     volocity newVolocity;
     face faces[6];//WARNING IF THE DATA IS NOT WRITTEN THERE IS NO DEAFAULT SAFTY NET !!!!!!!!!!!!!!!
     
     int key[6];
-    
+    int declaredNighbours;
     int declaredFaces;
 public:
+    point center;
     volocity internalVolocity;
     bool exists;
     cell();
@@ -27,6 +28,7 @@ public:
     void determineNeighbours(std::unordered_map<int,cell> map);
     void math(std::unordered_map<int,cell>);
     void update();//sets the new volocity as internal volocity
+    void addNighbour(int id_x);
     std::string printInternalVolocity();
     std::string printCenter();
     std::string printNeighbours();

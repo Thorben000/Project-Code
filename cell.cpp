@@ -6,7 +6,7 @@
 #include "point.h"
 #include <unordered_map>
 #include <iostream>
-cell::cell(){exists = false;declaredFaces=0;};
+cell::cell(){exists = false;declaredFaces=0;declaredNighbours=0;};
 
 void cell::addFace(face face){
     faces[declaredFaces] = face;
@@ -14,6 +14,16 @@ void cell::addFace(face face){
     declaredFaces+=1;
     exists = true;
     //std::cout<<"Cell id:"<<id<<std::endl<<"current faces:"<<printFaces()<<std::endl;
+    return;
+}
+void cell::addNighbour(int id_x){
+    if(id_x==-1){
+        key[declaredFaces] = id;
+        declaredNighbours+=1;
+        return;
+    }
+    key[declaredFaces] = id_x;
+    declaredNighbours+=1;
     return;
 }
 
