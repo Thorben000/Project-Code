@@ -6,6 +6,7 @@
 #include "point.h"
 #include <unordered_map>
 #include <iostream>
+#include <cmath>
 cell::cell(){exists = false;declaredFaces=0;declaredNighbours=0;};
 
 void cell::addFace(face face){
@@ -18,11 +19,11 @@ void cell::addFace(face face){
 }
 void cell::addNighbour(int id_x){
     if(id_x==-1){
-        key[declaredFaces] = id;
+        key[declaredNighbours] = id;
         declaredNighbours+=1;
         return;
     }
-    key[declaredFaces] = id_x;
+    key[declaredNighbours] = id_x;
     declaredNighbours+=1;
     return;
 }
@@ -142,7 +143,7 @@ std::string cell::printCenter(){
 
 std::string cell::printNeighbours(){
     std::string returnString= "(";;
-    for(int i=0;i<6;i++){
+    for(int i=0;i<declaredNighbours;i++){
         returnString += std::to_string(key[i]);
         returnString += ' ';
     }
@@ -181,9 +182,58 @@ std::string cell::printCorners(){
     returnString += ')';
     return returnString;
 }
-void cell::math(std::unordered_map<int,cell>){
+std::string cell::printGradiant(){
+    std::string returnString= "( ";
     for(int i=0;i<3;i++){
-        
+        returnString += std::to_string(gradient[i].x);
+        returnString += " ";
+        returnString += std::to_string(gradient[i].y);
+        returnString += " ";
+        returnString += std::to_string(gradient[i].z);
+        returnString += " ";
     }
+    returnString += ")\n";
+    return returnString;
+}
+
+void cell::math(std::unordered_map<int,cell> map){
+    int keys_x[2];
+    int x_def=0;
+    int keys_y[2];
+    int y_def=0;
+    int keys_z[2];
+    int z_def=0;
+    for(int i=0;i<6;i++){
+        if(map[key[i]].center.x-center.x != 0){
+            keys_x[x_def] = key[i];
+            x_def++;
+        }
+        else if(map[key[i]].center.y-center.y != 0){
+            keys_y[y_def] = key[i];
+            y_def++;
+        }
+        else if(map[key[i]].center.z-center.z != 0){
+            keys_z[z_def] = key[i];
+            z_def++;
+        }
+    }
+    double x_distance = std::fabs(center.x-map[keys_x[1]].center.x);
+    if (x_distance<std::fabs(center.x-map[keys_x[0]].center.x)) {x_distance = std::fabs(center.x-map[keys_x[0]].center.x);}
+    gradient[0] = volocity( (map[keys_x[0]].internalVolocity.x-map[keys_x[1]].internalVolocity.x)/(2*x_distance),
+                            (map[keys_x[0]].internalVolocity.y-map[keys_x[1]].internalVolocity.y)/(2*x_distance),
+                            (map[keys_x[0]].internalVolocity.z-map[keys_x[1]].internalVolocity.z)/(2*x_distance)
+                        );
+    double y_distance = std::fabs(center.x-map[keys_x[1]].center.x);
+    if (y_distance<std::fabs(center.x-map[keys_x[0]].center.x)) {y_distance = std::fabs(center.x-map[keys_x[0]].center.x);}
+    gradient[1] = volocity( (map[keys_y[0]].internalVolocity.x-map[keys_y[1]].internalVolocity.x)/(2*y_distance),
+                            (map[keys_y[0]].internalVolocity.y-map[keys_y[1]].internalVolocity.y)/(2*y_distance),
+                            (map[keys_y[0]].internalVolocity.z-map[keys_y[1]].internalVolocity.z)/(2*y_distance)
+                        );
+    double z_distance = std::fabs(center.x-map[keys_x[1]].center.x);
+    if (z_distance<std::fabs(center.x-map[keys_x[0]].center.x)) {z_distance = std::fabs(center.x-map[keys_x[0]].center.x);}
+    gradient[2] = volocity( (map[keys_z[0]].internalVolocity.x-map[keys_z[1]].internalVolocity.x)/(2*z_distance),
+                            (map[keys_z[0]].internalVolocity.y-map[keys_z[1]].internalVolocity.y)/(2*z_distance),
+                            (map[keys_z[0]].internalVolocity.z-map[keys_z[1]].internalVolocity.z)/(2*z_distance)
+                        );
 }
 #endif

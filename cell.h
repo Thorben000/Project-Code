@@ -11,7 +11,8 @@ private:
     
     volocity newVolocity;
     face faces[6];//WARNING IF THE DATA IS NOT WRITTEN THERE IS NO DEAFAULT SAFTY NET !!!!!!!!!!!!!!!
-    
+    void trace();
+    volocity gradient[3];
     int key[6];
     int declaredNighbours;
     int declaredFaces;
@@ -34,5 +35,6 @@ public:
     std::string printNeighbours();
     std::string printFaces();
     std::string printCorners();
+    std::string printGradiant();
 };
 #endif

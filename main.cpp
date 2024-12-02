@@ -23,10 +23,44 @@ void printValues(std::unordered_map<int,cell> map, int cellamount){
     std::cout<<"Amount cells: "<<cellamount<<std::endl;
     for(int i=0;i<cellamount;i++){
         std::cout<<"#####################################"<<std::endl<<"Cell ID: "<<i<<std::endl<<"Cell center: "<<map[i].printCenter()<<std::endl<<"Cell internal volocity: "<<map[i].printInternalVolocity()<<std::endl;
-        std::cout<<"Neighbours: "<<map[i].printNeighbours()<<std::endl/*<<"Faces: "<<map[i].printFaces()<<std::endl<<"Corners: "<<map[i].printCorners()<<std::endl*/;
+        std::cout<<"Neighbours: "<<map[i].printNeighbours()<<std::endl/*<<"Faces: "<<map[i].printFaces()<<std::endl/*<<"Corners: "<<map[i].printCorners()<<std::endl/**/;
     }
 }
-
+void printToFile(cellMapSaver cell_map_saver,std::string extracted_number,std::string base_file_path,int cell_amount){//for now only does the gradient!!!
+    std::string file_path_grad_u = base_file_path + "/" + extracted_number + "/grad(U)";
+    std::ofstream grad_u_file(file_path_grad_u);
+    std::ifstream grad_u_template_file("templates/tensorfield.templ");
+    std::string line_grad_u;
+    std::string line_template_grad_u;
+    //add hadder
+    for(int i=0;i<13;i++){
+        std::getline(grad_u_template_file,line_template_grad_u);
+        line_template_grad_u+='\n';
+        grad_u_file << line_template_grad_u;
+    }
+    std::getline(grad_u_template_file,line_template_grad_u);
+    line_template_grad_u += extracted_number;
+    line_template_grad_u += '\n';
+    grad_u_file << line_template_grad_u;
+    for(int i=0;i<8;i++){
+        std::getline(grad_u_template_file,line_template_grad_u);
+        line_template_grad_u+='\n';
+        grad_u_file << line_template_grad_u;
+    }
+    line_grad_u = std::to_string(cell_amount)+"\n(\n";
+    grad_u_file << line_grad_u;
+    for(int i=0;i<cell_amount;i++){
+        grad_u_file << cell_map_saver.map[i].printGradiant();
+    }
+    line_grad_u = ")\n;\n\n";
+    grad_u_file << line_grad_u;
+    for(int i=0;i<27;i++){
+        std::getline(grad_u_template_file,line_template_grad_u);
+        line_template_grad_u+='\n';
+        grad_u_file << line_template_grad_u;
+    }
+    return;
+}
 bool toBeRemoved(char c)
 {
     switch(c)
@@ -369,7 +403,7 @@ int main(int, char**){
         if ( cells.map[face_map[i].owners[1]].exists && face_map[i].owners[1]!= -1)
         {
            cells.map[face_map[i].owners[1]].addFace(face_map[i]);
-           cells.map[face_map[i].owners[0]].addNighbour(face_map[i].owners[0]);
+           cells.map[face_map[i].owners[1]].addNighbour(face_map[i].owners[0]);
            if(debug_one){
                 std::cout<<"Declared additional face for Cell:"<<face_map[i].owners[1]<<std::endl;
             }
@@ -378,7 +412,7 @@ int main(int, char**){
                 cells.map[face_map[i].owners[1]] = cell();
                 cells.map[face_map[i].owners[1]].id = face_map[i].owners[1];
                 cells.map[face_map[i].owners[1]].addFace(face_map[i]);
-                cells.map[face_map[i].owners[0]].addNighbour(face_map[i].owners[0]);
+                cells.map[face_map[i].owners[1]].addNighbour(face_map[i].owners[0]);
                 tempbool=true;
                 cell_amount++;
                 if(debug_one){
@@ -571,8 +605,10 @@ int main(int, char**){
                 printValues(cells.map,cell_amount);
                 std::cin >> dummy;
             }
-            
-
+            for(int i=0;i<cell_amount;i++){
+                cells.map[i].math(cells.map);
+            }
+            printToFile(cells,fileNumberExtracted,filePath,cell_amount);
 
         }
     }
