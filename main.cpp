@@ -44,7 +44,7 @@ void printToFile(cellMapSaver cell_map_saver,std::string extracted_number,std::s
     grad_u_file << line_template_grad_u;
     for(int i=0;i<8;i++){
         std::getline(grad_u_template_file,line_template_grad_u);
-        line_template_grad_u+='\n';
+        if(i<7)line_template_grad_u+='\n';
         grad_u_file << line_template_grad_u;
     }
     line_grad_u = std::to_string(cell_amount)+"\n(\n";
@@ -52,7 +52,7 @@ void printToFile(cellMapSaver cell_map_saver,std::string extracted_number,std::s
     for(int i=0;i<cell_amount;i++){
         grad_u_file << cell_map_saver.map[i].printGradiant();
     }
-    line_grad_u = ")\n;\n\n";
+    line_grad_u = ")\n;\n";
     grad_u_file << line_grad_u;
     for(int i=0;i<27;i++){
         std::getline(grad_u_template_file,line_template_grad_u);
