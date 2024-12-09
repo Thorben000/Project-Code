@@ -197,23 +197,36 @@ std::string cell::printGradiant(){
 }
 
 void cell::math(std::unordered_map<int,cell> map){
-    int keys_x[2];
+    int keys_x[2] = {id,id};
     int x_def=0;
-    int keys_y[2];
+    int keys_y[2] = {id,id};
     int y_def=0;
-    int keys_z[2];
+    int keys_z[2] = {id,id};
     int z_def=0;
+    
     for(int i=0;i<6;i++){
-        if(map[key[i]].center.x-center.x != 0){
-            keys_x[x_def] = key[i];
+        if(map[key[i]].center.x-center.x > 0){
+            keys_x[0] = key[i];
             x_def++;
         }
-        else if(map[key[i]].center.y-center.y != 0){
-            keys_y[y_def] = key[i];
+        else if(map[key[i]].center.y-center.y > 0){
+            keys_y[0] = key[i];
             y_def++;
         }
-        else if(map[key[i]].center.z-center.z != 0){
-            keys_z[z_def] = key[i];
+        else if(map[key[i]].center.z-center.z > 0){
+            keys_z[0] = key[i];
+            z_def++;
+        }
+        else if(map[key[i]].center.x-center.x < 0){
+            keys_x[1] = key[i];
+            x_def++;
+        }
+        else if(map[key[i]].center.y-center.y < 0){
+            keys_y[1] = key[i];
+            y_def++;
+        }
+        else if(map[key[i]].center.z-center.z < 0){
+            keys_z[1] = key[i];
             z_def++;
         }
     }
