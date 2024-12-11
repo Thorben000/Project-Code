@@ -232,6 +232,10 @@ void cell::math(std::unordered_map<int,cell> map){
     }
     double x_distance = std::fabs(center.x-map[keys_x[1]].center.x);
     if (x_distance<std::fabs(center.x-map[keys_x[0]].center.x)) {x_distance = std::fabs(center.x-map[keys_x[0]].center.x);}
+    std::cout<<x_distance<<std::endl;
+    std::cout<<(map[keys_x[0]].internalVolocity.x-map[keys_x[1]].internalVolocity.x)/(2*x_distance)<<" , "<<
+                            (map[keys_x[0]].internalVolocity.y-map[keys_x[1]].internalVolocity.y)/(2*x_distance)<<" , "<<
+                            (map[keys_x[0]].internalVolocity.z-map[keys_x[1]].internalVolocity.z)/(2*x_distance)<<std::endl;
     gradient[0] = volocity( (map[keys_x[0]].internalVolocity.x-map[keys_x[1]].internalVolocity.x)/(2*x_distance),
                             (map[keys_x[0]].internalVolocity.y-map[keys_x[1]].internalVolocity.y)/(2*x_distance),
                             (map[keys_x[0]].internalVolocity.z-map[keys_x[1]].internalVolocity.z)/(2*x_distance)
