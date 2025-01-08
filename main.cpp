@@ -61,6 +61,41 @@ void printToFile(cellMapSaver cell_map_saver,std::string extracted_number,std::s
     }
     return;
 }
+void printToFileQ(cellMapSaver cell_map_saver,std::string extracted_number,std::string base_file_path,int cell_amount){//for now only does the Q!!!
+    std::string file_path_grad_u = base_file_path + "/" + extracted_number + "/Q";
+    std::ofstream grad_u_file(file_path_grad_u);
+    std::ifstream grad_u_template_file("templates/QCriterium.templ");
+    std::string line_grad_u;
+    std::string line_template_grad_u;
+    //add hadder
+    for(int i=0;i<13;i++){
+        std::getline(grad_u_template_file,line_template_grad_u);
+        line_template_grad_u+='\n';
+        grad_u_file << line_template_grad_u;
+    }
+    std::getline(grad_u_template_file,line_template_grad_u);
+    line_template_grad_u += extracted_number;
+    line_template_grad_u += '\n';
+    grad_u_file << line_template_grad_u;
+    for(int i=0;i<8;i++){
+        std::getline(grad_u_template_file,line_template_grad_u);
+        if(i<7)line_template_grad_u+='\n';
+        grad_u_file << line_template_grad_u;
+    }
+    line_grad_u = std::to_string(cell_amount)+"\n(\n";
+    grad_u_file << line_grad_u;
+    for(int i=0;i<cell_amount;i++){
+        grad_u_file << cell_map_saver.map[i].printQ();
+    }
+    line_grad_u = ")\n;\n";
+    grad_u_file << line_grad_u;
+    for(int i=0;i<27;i++){
+        std::getline(grad_u_template_file,line_template_grad_u);
+        line_template_grad_u+='\n';
+        grad_u_file << line_template_grad_u;
+    }
+    return;
+}
 bool toBeRemoved(char c)
 {
     switch(c)

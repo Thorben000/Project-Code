@@ -16,6 +16,7 @@ private:
     int key[6];
     int declaredNighbours;
     int declaredFaces;
+    double q_crit;
 public:
     point center;
     volocity internalVolocity;
@@ -36,5 +37,9 @@ public:
     std::string printFaces();
     std::string printCorners();
     std::string printGradiant();
+    std::string printQ();
+    double trace_base();
+    double trace_other();
+    void Q_crit_math();
 };
 #endif

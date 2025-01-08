@@ -195,7 +195,32 @@ std::string cell::printGradiant(){
     returnString += ")\n";
     return returnString;
 }
+std::string cell::printQ(){
+    std::string returnString= "( ";
+    returnString += std::to_string(q_crit);
+    returnString += ")\n";
+    return returnString;
+}
+double cell::trace_base(){
+double return_value=0;
+return_value+=gradient[0].x;
+return_value+=gradient[1].y;
+return_value+=gradient[2].z;
+return return_value;
+}
+double cell::trace_other(){
+double return_value=0;
+return_value+=gradient[0].x * gradient[0].x + gradient[0].y*gradient[1].x + gradient[0].z*gradient[2].x;
+return_value+=gradient[1].x*gradient[0].y + gradient[1].y*gradient[1].y + gradient[1].z*gradient[2].y;
+return_value+=gradient[2].x*gradient[0].z +  gradient[2].y*gradient[1].z + gradient[2].z*gradient[2].z;
+return return_value;
+}
 
+void cell::Q_crit_math(){
+q_crit = (1./2.) * std::pow(trace_base(),2);
+q_crit = (1./2.) * trace_other();
+return;
+}
 void cell::math(std::unordered_map<int,cell> map){
     int keys_x[2] = {id,id};
     int x_def=0;
@@ -252,5 +277,7 @@ void cell::math(std::unordered_map<int,cell> map){
                             (map[keys_z[0]].internalVolocity.y-map[keys_z[1]].internalVolocity.y)/(2*z_distance),
                             (map[keys_z[0]].internalVolocity.z-map[keys_z[1]].internalVolocity.z)/(2*z_distance)
                         );
+
+    Q_crit_math();
 }
 #endif
