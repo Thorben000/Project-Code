@@ -644,6 +644,7 @@ int main(int, char**){
                 cells.map[i].math(cells.map);
             }
             printToFile(cells,fileNumberExtracted,filePath,cell_amount);
+            printToFileQ(cells,fileNumberExtracted,filePath,cell_amount);
 
         }
     }
