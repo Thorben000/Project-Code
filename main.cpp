@@ -1,3 +1,4 @@
+#include <chrono>
 #include <iostream>
 #include <unordered_map>
 #include "point.h"
@@ -9,11 +10,17 @@
 #include "cell.h"
 #include <thread>
 
+
 /*
 ---------------------------------------------------------------------------
 
 helper functions go down here
 */
+uint64_t getTimeMS(){
+    using namespace std::chrono;
+    uint64_t ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+    return ms;
+};
 class cellMapSaver{
     public:
     std::unordered_map<int,cell> map;
@@ -109,11 +116,16 @@ bool toBeRemoved(char c)
 }
 
 void threadableMath(int cell_amount_thread,int cell_start_thread,int threadNR,int debug_one,cellMapSaver* cellMap){
-    std::cout<<cell_start_thread<<"  "<< cell_amount_thread<<std::endl;
+    int portion_of_then = 1;
     for(int i=cell_start_thread;i<cell_amount_thread;i++){
         if(cellMap->map[i].exists){
             //cellMap->map[i].determineCenter();
             //cellMap->map[i].determineNeighbours(cellMap->map);
+            cellMap->map[i].math(cellMap->map);
+            if(i/cell_amount_thread>= 0.1*portion_of_then){
+                        portion_of_then += 1;
+                        std::cout<<"completed: "<<0.1*portion_of_then<<std::endl;
+                    }
             if(debug_one){
                 std::cout<<"Run: "<<i<<"Of Thread NR."<<threadNR<<std::endl;
             }  
@@ -640,9 +652,35 @@ int main(int, char**){
                 printValues(cells.map,cell_amount);
                 std::cin >> dummy;
             }
-            for(int i=0;i<cell_amount;i++){
-                cells.map[i].math(cells.map);
+            uint64_t start_time;
+            start_time = getTimeMS();
+
+            int portions_of_then = 1;
+            if(cell_amount>50000){
+                int num_threads = 11;
+                int thread_load = cell_amount / 10;
+                std::cout<<"trying to create Threads number:"<<num_threads<<std::endl;
+                std::thread* threads[num_threads];
+
+                for(int i=0;i<num_threads;i++){
+                    std::cout<<"Thread created"<<std::endl;
+                    threads[i] = new std::thread(threadableMath,thread_load*(i+1),(i)*thread_load,i,debug_one,&cells);
+                }
+                std::cout<<"All threads created"<<std::endl;
+                for(int i=0;i<num_threads;i++){
+                    threads[i]->join();
+                }
             }
+            else{
+                for(int i=0;i<cell_amount;i++){
+                    cells.map[i].math(cells.map);
+                    if(i/cell_amount>= 0.1*portions_of_then){
+                        portions_of_then += 1;
+                        std::cout<<"completed: "<<0.1*portions_of_then<<std::endl;
+                    }
+                }
+            }
+            std::cout<<"THE math took: "<<start_time - getTimeMS()<<" ms"<<std::endl;
             printToFile(cells,fileNumberExtracted,filePath,cell_amount);
             printToFileQ(cells,fileNumberExtracted,filePath,cell_amount);
 
