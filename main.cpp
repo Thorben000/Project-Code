@@ -546,7 +546,7 @@ int main(int, char**){
 
                 for(int i=0;i<num_threads;i++){
                     std::cout<<LOC<<"Thread created"<<std::endl;
-                    threads[i] = new std::thread(threadableMath,thread_load*i,thread_load*(i+1),i,start_time, cells, results);
+                    threads[i] = new std::thread(threadableMath,thread_load*i, std::min(thread_load*(i+1), cell_amount),i,start_time, cells, results);
                 }
                 std::cout<<LOC<<"All threads created"<<std::endl;
                 for(int i=0;i<num_threads;i++){
