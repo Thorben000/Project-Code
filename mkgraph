@@ -1,9 +1,9 @@
 #!/bin/sh
 echo Building...
-make build >0
+make build_debug > /dev/null
 echo Done.
 echo Starting fluid sim in background
-./FluidSim >0 &
+./FluidSim > /dev/null &
 PID=$(pgrep FluidSim)
 if [ -z "${PID}" ]; then
     echo No FluidSim found
