@@ -155,7 +155,6 @@ int main(int, char**){
     int cell_amount=0;
     int face_amount=0;
 
-    std::string dummy;
     Config config {};
     load_config(&config);
     std::vector<double> calculate_steps = config.calculate_steps;
@@ -533,7 +532,6 @@ int main(int, char**){
             std::cout << LOC << "Done loading velocities" <<std::endl;
             if(config.debug_two){
                 printValues(cells,cell_amount);
-                std::cin >> dummy;
             }
             uint64_t start_time;
             start_time = getTimeMS();
