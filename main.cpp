@@ -308,7 +308,6 @@ int main(int, char**){
         }
         //create point 
         faces[i] = face(point_map[values[0]],point_map[values[1]],point_map[values[2]],point_map[values[3]]);
-        faces[i].id = i;
         if(config.debug_one == 1){
             std::cout<<LOC<<"face corner IDs: "<< values[0] << " , "<< values[1] << " , "<< values[2] << " , "<< values[3]<< std::endl;
             
@@ -541,7 +540,7 @@ int main(int, char**){
                 if (config.thread_count < 1) panic("Must use at least one thread, but a config value of " << config.thread_count << " was provided");
                 int num_threads = config.thread_count;
                 num_threads += 1; // one residual thread
-                int thread_load = cell_amount / (num_threads);
+                int thread_load = cell_amount / (num_threads-1);
                 std::cout<<LOC<<"trying to create Threads number:"<<num_threads<<std::endl;
                 std::thread* threads[num_threads];
 

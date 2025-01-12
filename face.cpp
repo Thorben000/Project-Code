@@ -7,7 +7,6 @@ face::face(){/*only a default*/
 };
 
 face::face(int id){/*only a default*/
-    this->id = id;
     owners[0] = -1;
     owners[1] = -1;
 };

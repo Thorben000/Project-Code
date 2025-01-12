@@ -6,7 +6,6 @@ class face
 {
 public:
     int owners[2];
-    int id;
     std::string printCorners();
     face();
     face(int id);
