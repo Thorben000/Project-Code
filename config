@@ -22,6 +22,6 @@ Increment for threads(above 25000 cells):
 0.01
 Calculate these time steps base:
 0.2
-0.2
 15
+0.2
 <<END>>

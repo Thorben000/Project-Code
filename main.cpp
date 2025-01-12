@@ -157,13 +157,12 @@ int main(int, char**){
 
     Config config {};
     load_config(&config);
-    std::vector<double> calculate_steps = config.calculate_steps;
 
     std::cout <<LOC << "Config loaded successfully with path '" << config.filePath << "'" << std::endl;
 
     std::cout << LOC << "Calc number entries is: " << config.numberCalculateSteps<<" content:"<<std::endl;
     for(int i=0;i<config.numberCalculateSteps*3;i++){
-        std::cout<<LOC<<"  "<<(int)i/3+1<<". "<<calculate_steps[i]<<std::endl;
+        std::cout<<LOC<<"  "<<(int)i/3+1<<". "<<config.calculate_steps[i]<<std::endl;
     }
     
 
@@ -442,9 +441,10 @@ int main(int, char**){
     std::string filePath_centers;
     std::string C_line;
     for(int i=0;i<config.numberCalculateSteps*3;i+=3){
-        start = calculate_steps[i];
-        end = calculate_steps[i+1];
-        increment_time = calculate_steps[i+2];
+        start = config.calculate_steps[i];
+        end = config.calculate_steps[i+1];
+        increment_time = config.calculate_steps[i+2];
+        std::cout << LOC << "start: " << start << " end: " << end << " increment " << increment_time << std::endl;
         for(double n=start;n<=end;n+=increment_time){
             std::string fileNumber = std::to_string(n);
             while (fileNumber.length() > 1) {
