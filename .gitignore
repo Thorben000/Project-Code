@@ -12,3 +12,4 @@ perf.data.old
 out.folded
 *.exe
 FluidSim
+.cache/*
