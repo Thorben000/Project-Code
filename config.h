@@ -1,6 +1,7 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 #include <string>
+#include <vector>
 
 struct Config {
     std::string filePath;
@@ -14,7 +15,7 @@ struct Config {
     int thread_count;
     double start_time;
     double increment;
-    double* calculate_steps;
+    std::vector<double> calculate_steps;
     int numberCalculateSteps;
 };
 

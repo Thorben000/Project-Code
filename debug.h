@@ -15,6 +15,6 @@
 
 #define panic(...) do { std::cout << LOC << "\x1b[1;31mERROR:\x1b[0m " << __VA_ARGS__ << std::endl; exit(1); } while (0)
 
-#define assert_file_valid(file, path) do { if (!file.is_open()) { panic("File '" << path << "' could not be found."); } } while (0)
+#define assert_file_valid(file, path) do { if (!file.is_open()) { panic("Could not open file '" << path << "'."); } } while (0)
 
 #endif

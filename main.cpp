@@ -45,6 +45,7 @@ void printToFile(std::vector<cell> cells, std::vector<cell_result> cell_results,
     std::string file_path_grad_u = base_file_path + "/" + extracted_number + "/grad(U)";
     std::ofstream grad_u_file(file_path_grad_u);
     std::ifstream grad_u_template_file("templates/tensorfield.templ");
+    assert_file_valid(grad_u_template_file, "templates/tensorfield.templ");
     std::string line_grad_u;
     std::string line_template_grad_u;
     //add hadder
@@ -80,6 +81,7 @@ void printToFileQ(std::vector<cell> cells, std::vector<cell_result> celL_results
     std::string file_path_grad_u = base_file_path + "/" + extracted_number + "/Q";
     std::ofstream grad_u_file(file_path_grad_u);
     std::ifstream grad_u_template_file("templates/QCriterium.templ");
+    assert_file_valid(grad_u_template_file, "templates/QCriterium.templ");
     std::string line_grad_u;
     std::string line_template_grad_u;
     //add hadder
@@ -147,33 +149,22 @@ void threadableMath(int cell_start_thread, int cell_end_thread,int threadNR, uin
 end of helper functions
 */
 
-
-/*
-Exit codes: 
----------------------------------------------------------------------------
-x --> single digit numbers are for loading time errors
-xx -> double digit numbers are for run time errors
----------------------------------------------------------------------------
-1 --> Error during config loading
-*/
-
-
 int main(int, char**){
     double startTime;
-    double* CalculateSteps = new double[999];
 
     int cell_amount=0;
     int face_amount=0;
 
     std::string dummy;
-    Config config { .calculate_steps = CalculateSteps };
+    Config config {};
     load_config(&config);
+    std::vector<double> calculate_steps = config.calculate_steps;
 
     std::cout <<LOC << "Config loaded successfully with path '" << config.filePath << "'" << std::endl;
 
     std::cout << LOC << "Calc number entries is: " << config.numberCalculateSteps<<" content:"<<std::endl;
     for(int i=0;i<config.numberCalculateSteps*3;i++){
-        std::cout<<LOC<<"  "<<(int)i/3+1<<". "<<CalculateSteps[i]<<std::endl;
+        std::cout<<LOC<<"  "<<(int)i/3+1<<". "<<calculate_steps[i]<<std::endl;
     }
     
 
@@ -185,10 +176,7 @@ int main(int, char**){
     std::unordered_map<int,point> point_map;
     std::string point_file_path = config.filePath+"/constant/polyMesh/points";
     std::ifstream point_file(point_file_path);
-    if (!point_file.is_open()) {
-        std::cout << LOC << "ERROR: could not open file '" << point_file_path << "'" << std::endl;
-        exit(1);
-    }
+    assert_file_valid(point_file, point_file_path);
     std::string line;
     int number_of_entries=-1;
     for(int i=0;i<19;i++){
@@ -255,7 +243,9 @@ int main(int, char**){
     Second we create the faces
 
     */
-    std::ifstream face_file(config.filePath+"/constant/polyMesh/faces");
+    std::string face_file_path = config.filePath+"/constant/polyMesh/faces";
+    std::ifstream face_file(face_file_path);
+    assert_file_valid(face_file, face_file_path);
     number_of_entries=-1;
     for(int i=0;i<19;i++){
         std::getline(face_file,line);//skips the first 19 lines of the file unimportant
@@ -295,8 +285,7 @@ int main(int, char**){
                         std::cout <<LOC<< std::endl << " current value[" << j <<"] = "<< values[j] <<std::endl;
                     }
                     if(tempString==" "){
-                        std::cout<<LOC<<"ERROR: SOMETHING MESSED UP"<<std::endl;
-                        exit(1);
+                        panic("Invalid content of file");
                     }
                     values[j]=std::stoi(tempString);
                     
@@ -337,7 +326,9 @@ int main(int, char**){
     then we read the face ownerships
 
     */
-    std::ifstream face_file_o(config.filePath+"/constant/polyMesh/owner");
+    std::string face_file_o_path = config.filePath+"/constant/polyMesh/owner";
+    std::ifstream face_file_o(face_file_o_path);
+    assert_file_valid(face_file_o, face_file_o_path);
     number_of_entries=-1;
     for(int i=0;i<20;i++){
         std::getline(face_file_o,line);//skips the first 19 lines of the file unimportant
@@ -367,7 +358,9 @@ int main(int, char**){
     
     */
 
-    std::ifstream face_file_n(config.filePath+"/constant/polyMesh/neighbour");
+    std::string face_file_n_path = config.filePath+"/constant/polyMesh/neighbour";
+    std::ifstream face_file_n(face_file_n_path);
+    assert_file_valid(face_file_n, face_file_n_path);
     number_of_entries=-1;
     for(int i=0;i<20;i++){
         std::getline(face_file_n,line);//skips the first 19 lines of the file unimportant
@@ -447,13 +440,13 @@ int main(int, char**){
     double start;
     double end;
     double increment_time;
-    std::string filePath_volocities;
+    std::string filePath_velocities;
     std::string filePath_centers;
     std::string C_line;
     for(int i=0;i<config.numberCalculateSteps*3;i+=3){
-        start = CalculateSteps[i];
-        end = CalculateSteps[i+1];
-        increment_time = CalculateSteps[i+2];
+        start = calculate_steps[i];
+        end = calculate_steps[i+1];
+        increment_time = calculate_steps[i+2];
         for(double n=start;n<=end;n+=increment_time){
             std::string fileNumber = std::to_string(n);
             while (fileNumber.length() > 1) {
@@ -463,38 +456,32 @@ int main(int, char**){
                 }
                 fileNumber.pop_back();
             }
-            filePath_volocities = config.filePath;
-            filePath_volocities += "/";
-            filePath_volocities += fileNumber;
-            filePath_centers = filePath_volocities;
+            filePath_velocities = config.filePath;
+            filePath_velocities += "/";
+            filePath_velocities += fileNumber;
+            filePath_centers = filePath_velocities;
             filePath_centers += "/C";
-            filePath_volocities += "/U";
-            std::ifstream volocity_file(filePath_volocities);
+            filePath_velocities += "/U";
+            std::ifstream velocity_file(filePath_velocities);
             std::ifstream center_file(filePath_centers);
-            if(!volocity_file.is_open()){
-                std::cout<<LOC<<"ERROR: failed to open file '"<<filePath_volocities<<"'"<<std::endl;
-                exit(1);
-            }
-            if(!center_file.is_open()){
-                std::cout<<LOC<<"ERROR: failed to open file"<<filePath_centers<<"'"<<std::endl;
-                exit(1);
-            }
+            assert_file_valid(velocity_file, filePath_velocities);
+            assert_file_valid(center_file, filePath_centers);
             line="";
             C_line="";
             number_of_entries=-1;
             for(int i=0;i<21;i++){
-                std::getline(volocity_file,line);//skips the first 19 lines of the file unimportant
+                std::getline(velocity_file,line);//skips the first 19 lines of the file unimportant
                 std::getline(center_file,C_line);
             }
-            std::getline(volocity_file,line);
+            std::getline(velocity_file,line);
             std::getline(center_file,C_line);
             
             number_of_entries = std::stoi(line);
             std::cout << LOC << "entries: " << number_of_entries << std::endl;
-            std::getline(volocity_file,line);//gets rid of a unwanted line
+            std::getline(velocity_file,line);//gets rid of a unwanted line
             std::getline(center_file,C_line);
             for(int i=0;i<number_of_entries;i++){
-                std::getline(volocity_file,line);//get line
+                std::getline(velocity_file,line);//get line
                 std::getline(center_file,C_line);
                 //remmove brakets  ex: "(0 0 0)"" --> "0 0 0 "
                 line.erase(std::remove_if(line.begin(),line.end(),toBeRemoved),line.end());
@@ -542,7 +529,7 @@ int main(int, char**){
                 cells[i].internalVolocity = velocity(values[0],values[1],values[2]);
                 cells[i].center = point(c_value[0],c_value[1],c_value[2]);
             }
-            volocity_file.close();
+            velocity_file.close();
             std::cout << LOC << "Done loading velocities" <<std::endl;
             if(config.debug_two){
                 printValues(cells,cell_amount);

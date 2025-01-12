@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <fstream>
 #include <iostream>
+#include <vector>
 #include "config.h"
 #include "debug.h"
 enum pointer_type{
@@ -12,8 +13,14 @@ enum pointer_type{
     PT_INT,
     PT_BOOL,
     PT_DOUBLE,
-    PT_DOUBLE_ARRAY,
-    PT_DOUBLE_ARRAY_ADD,
+    PT_DOUBLE_VECTOR,
+};
+
+enum pointer_flags {
+    PF_NONE  = 0,      // no flags
+    PF_MULTI = 1 << 0, // multiple entries allowed
+    PF_OPT   = 1 << 1, // is optional
+    PF_SET   = 1 << 2, // has been set
 };
 
 struct pointer_entity
@@ -21,12 +28,12 @@ struct pointer_entity
     enum pointer_type type;
     void* pointer;
     void* pointer_2;
-    bool set;
-    bool optional;
+    int flags;
 };
 
 
 void load_config(Config* config){
+    config->calculate_steps = std::vector<double>();
     std::string line;
     std::string line2;
 
@@ -35,31 +42,31 @@ void load_config(Config* config){
     assert_file_valid(config_file, filename);
 
     std::unordered_map <std::string, pointer_entity> map_pointers {};
-    map_pointers["Name of Dataset"] =  pointer_entity {.type=PT_STRING,.pointer = &config->filePath, .set=false, .optional=false};
-    map_pointers["Debug mode one"] =  pointer_entity {.type=PT_INT,.pointer = &config->debug_one, .set=false, .optional=false};
-    map_pointers["Debug mode two"] =  pointer_entity {.type=PT_INT,.pointer = &config->debug_two, .set=false, .optional=false};
-    map_pointers["Debug mode three"] =  pointer_entity {.type=PT_INT,.pointer = &config->debug_three, .set=false, .optional=false};
-    map_pointers["Debug mode one stepping one"] = pointer_entity {.type=PT_INT,.pointer = &config->debug_one_step_one, .set=false, .optional=false};
-    map_pointers["Debug mode one stepping two"] = pointer_entity {.type=PT_INT,.pointer = &config->debug_one_step_two, .set=false, .optional=false};
-    map_pointers["Debug mode one stepping three"] = pointer_entity {.type=PT_INT,.pointer = &config->debug_one_step_three, .set=false, .optional=false};
-    map_pointers["Use threads"] = pointer_entity {.type=PT_BOOL,.pointer = &config->use_threads, .set=false, .optional=false};
-    map_pointers["Thread count"] = pointer_entity {.type=PT_INT,.pointer = &config->thread_count, .set=false, .optional=false};
-    map_pointers["Start time"] = pointer_entity {.type=PT_DOUBLE,.pointer = &config->start_time, .set=false, .optional=false};
-    map_pointers["Increment for threads(above 25000 cells)"] = pointer_entity {.type=PT_DOUBLE,.pointer=&config->increment, .set=false, .optional=false};
-    map_pointers["Calculate these time steps base"] = pointer_entity {.type=PT_DOUBLE_ARRAY,.pointer=&config->calculate_steps,.pointer_2=&config->numberCalculateSteps, .set=false, .optional=false};//given in the following format--> start_value \n end_value \n increments
-    map_pointers["Calculate these time steps add"] = pointer_entity {.type=PT_DOUBLE_ARRAY_ADD,.pointer=&config->calculate_steps,.pointer_2=&config->numberCalculateSteps, .set=false, .optional=false};//given in the following format--> start_value \n end_value \n increments
+    map_pointers["Name of Dataset"] =  pointer_entity {.type=PT_STRING,.pointer = &config->filePath, .flags = PF_NONE};
+    map_pointers["Debug mode one"] =  pointer_entity {.type=PT_INT,.pointer = &config->debug_one, .flags = PF_NONE};
+    map_pointers["Debug mode two"] =  pointer_entity {.type=PT_INT,.pointer = &config->debug_two, .flags = PF_NONE};
+    map_pointers["Debug mode three"] =  pointer_entity {.type=PT_INT,.pointer = &config->debug_three, .flags = PF_NONE};
+    map_pointers["Debug mode one stepping one"] = pointer_entity {.type=PT_INT,.pointer = &config->debug_one_step_one, .flags = PF_NONE};
+    map_pointers["Debug mode one stepping two"] = pointer_entity {.type=PT_INT,.pointer = &config->debug_one_step_two, .flags = PF_NONE};
+    map_pointers["Debug mode one stepping three"] = pointer_entity {.type=PT_INT,.pointer = &config->debug_one_step_three, .flags = PF_NONE};
+    map_pointers["Use threads"] = pointer_entity {.type=PT_BOOL,.pointer = &config->use_threads, .flags = PF_NONE};
+    map_pointers["Thread count"] = pointer_entity {.type=PT_INT,.pointer = &config->thread_count, .flags = PF_NONE};
+    map_pointers["Start time"] = pointer_entity {.type=PT_DOUBLE,.pointer = &config->start_time, .flags = PF_NONE};
+    map_pointers["Increment for threads(above 25000 cells)"] = pointer_entity {.type=PT_DOUBLE,.pointer=&config->increment, .flags = PF_NONE};
+    map_pointers["Calculate these time steps base"] = pointer_entity {.type=PT_DOUBLE_VECTOR,.pointer=&config->calculate_steps,.pointer_2=&config->numberCalculateSteps, .flags = PF_NONE};//given in the following format--> start_value \n end_value \n increments
+    map_pointers["Calculate these time steps add"] = pointer_entity {.type=PT_DOUBLE_VECTOR,.pointer=&config->calculate_steps,.pointer_2=&config->numberCalculateSteps, .flags = PF_MULTI|PF_OPT};//given in the following format--> start_value \n end_value \n increments
     std::string* temp_string_pointer;
     int* temp_int8_t_pointer;
     double* temp_double_pointer;
+    std::vector<double>* temp_double_vector_pointer;
     bool* temp_bool_pointer;
     double start;
     double end;
     double increm;
     
     while(std::getline(config_file,line)){
-        std::cout << LOC << "parsing cfg key '" << line << "'" << std::endl;
         if(line == "<<END>>"){
-            return;
+            break;
         }
         if(!std::getline(config_file,line2)){
             panic("Unexpected EOF while parsing config");
@@ -68,13 +75,14 @@ void load_config(Config* config){
             panic("Expect key '" << line << "' to end with ':'");
         }
         line.pop_back();
+        std::cout << LOC << "parsing cfg key '" << line << "'" << std::endl;
         if (map_pointers.count(line) == 0) { // key doesnt exist
             panic("Invalid config key '" << line << "'");
         }
-        if (map_pointers[line].set) {
+        if ((map_pointers[line].flags & PF_SET) != 0 && (map_pointers[line].flags & PF_MULTI) == 0) {
             panic("Config key '" << line << "' is set already");
         }
-        map_pointers[line].set = true;
+        map_pointers[line].flags |= PF_SET;
         switch (map_pointers[line].type)
         {
         case PT_STRING:
@@ -102,8 +110,8 @@ void load_config(Config* config){
                 panic("Invalid argument for '" << line << "': '" << line2 << "'.\nExpected <double>");
             }
             break;
-        case PT_DOUBLE_ARRAY:
-            temp_double_pointer = *(double**) map_pointers[line].pointer;
+        case PT_DOUBLE_VECTOR:
+            temp_double_vector_pointer = (std::vector<double>*) map_pointers[line].pointer;
             temp_int8_t_pointer = (int*) map_pointers[line].pointer_2;
             try {
                 start = std::stod(line2);
@@ -114,27 +122,9 @@ void load_config(Config* config){
             } catch(...) {
                 panic("Invalid argument for '" << line << "': '" << line2 << "'.\nExpected double array");
             }
-            temp_double_pointer[0] = start;
-            temp_double_pointer[1] = end;
-            temp_double_pointer[2] = increm;
-            *temp_int8_t_pointer = 1;
-            break;
-        case PT_DOUBLE_ARRAY_ADD:
-            temp_double_pointer = *(double**) map_pointers[line].pointer;
-            temp_int8_t_pointer = (int*) map_pointers[line].pointer_2;
-            try {
-                start = std::stod(line2);
-                std::getline(config_file, line);
-                end = std::stod(line);
-                std::getline(config_file, line);
-                increm = std::stod(line);
-            } catch(...) {
-                panic("Invalid argument for '" << line << "': '" << line2 << "'.\nExpected double array");
-            }
-            double* temp_pointer;
-            temp_double_pointer[0+2*(*temp_int8_t_pointer)] = start;
-            temp_double_pointer[1+2*(*temp_int8_t_pointer)] = end;
-            temp_double_pointer[2+2*(*temp_int8_t_pointer)] = increm;
+            temp_double_vector_pointer->push_back(start);
+            temp_double_vector_pointer->push_back(end);
+            temp_double_vector_pointer->push_back(increm);
             *temp_int8_t_pointer += 1;
             break;
         default:
@@ -143,7 +133,7 @@ void load_config(Config* config){
     }
     for (const auto & [key, value] : map_pointers) {
         // value is mandarory but wasnt set?
-        if (!value.set && !value.optional) {
+        if ((value.flags & PF_SET) == 0 && (value.flags & PF_OPT) == 0) {
             panic("Config key '" << key << "' was never set");
         }
     }
