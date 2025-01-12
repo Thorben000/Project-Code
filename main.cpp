@@ -1,14 +1,20 @@
+#include <array>
 #include <chrono>
+#include <cstdint>
 #include <iostream>
-#include <unordered_map>
+#include <ostream>
+#include <string>
+#include <thread>
+
 #include "point.h"
 #include "face.h"//this is a surface ^^
 #include <fstream>
 #include <algorithm>
+#include <vector>
 #include "config.h"
-#include "volocity.h"
+#include "velocity.h"
 #include "cell.h"
-#include <thread>
+#include "debug.h"
 
 
 /*
@@ -23,17 +29,19 @@ uint64_t getTimeMS(){
 };
 class cellMapSaver{
     public:
-    std::unordered_map<int,cell> map;
-    cellMapSaver(){};
+    std::vector<cell> cells;
+    cellMapSaver(int cell_count){
+        
+    };
 };
-void printValues(std::unordered_map<int,cell> map, int cellamount){
-    std::cout<<"Amount cells: "<<cellamount<<std::endl;
+void printValues(std::vector<cell> cells, int cellamount){
+    std::cout<<LOC<<"Amount cells: "<<cellamount<<std::endl;
     for(int i=0;i<cellamount;i++){
-        std::cout<<"#####################################"<<std::endl<<"Cell ID: "<<i<<std::endl<<"Cell center: "<<map[i].printCenter()<<std::endl<<"Cell internal volocity: "<<map[i].printInternalVolocity()<<std::endl;
-        std::cout<<"Neighbours: "<<map[i].printNeighbours()<<std::endl/*<<"Faces: "<<map[i].printFaces()<<std::endl/*<<"Corners: "<<map[i].printCorners()<<std::endl/**/;
+        std::cout<<LOC<<"#####################################"<<std::endl<<"Cell ID: "<<i<<std::endl<<"Cell center: "<<cells[i].printCenter()<<std::endl<<"Cell internal volocity: "<<cells[i].printInternalVolocity()<<std::endl;
+        std::cout<<LOC<<"Neighbours: "<<cells[i].printNeighbours()<<std::endl/*<<"Faces: "<<cells[i].printFaces()<<std::endl/*<<"Corners: "<<cells[i].printCorners()<<std::endl/**/;
     }
 }
-void printToFile(cellMapSaver cell_map_saver,std::string extracted_number,std::string base_file_path,int cell_amount){//for now only does the gradient!!!
+void printToFile(std::vector<cell> cells, std::vector<cell_result> cell_results, std::string extracted_number,std::string base_file_path,int cell_amount){//for now only does the gradient!!!
     std::string file_path_grad_u = base_file_path + "/" + extracted_number + "/grad(U)";
     std::ofstream grad_u_file(file_path_grad_u);
     std::ifstream grad_u_template_file("templates/tensorfield.templ");
@@ -57,7 +65,7 @@ void printToFile(cellMapSaver cell_map_saver,std::string extracted_number,std::s
     line_grad_u = std::to_string(cell_amount)+"\n(\n";
     grad_u_file << line_grad_u;
     for(int i=0;i<cell_amount;i++){
-        grad_u_file << cell_map_saver.map[i].printGradiant();
+        grad_u_file << cells[i].printGradient(cell_results[i].gradient);
     }
     line_grad_u = ")\n;\n";
     grad_u_file << line_grad_u;
@@ -68,7 +76,7 @@ void printToFile(cellMapSaver cell_map_saver,std::string extracted_number,std::s
     }
     return;
 }
-void printToFileQ(cellMapSaver cell_map_saver,std::string extracted_number,std::string base_file_path,int cell_amount){//for now only does the Q!!!
+void printToFileQ(std::vector<cell> cells, std::vector<cell_result> celL_results, std::string extracted_number,std::string base_file_path,int cell_amount){//for now only does the Q!!!
     std::string file_path_grad_u = base_file_path + "/" + extracted_number + "/Q";
     std::ofstream grad_u_file(file_path_grad_u);
     std::ifstream grad_u_template_file("templates/QCriterium.templ");
@@ -92,7 +100,7 @@ void printToFileQ(cellMapSaver cell_map_saver,std::string extracted_number,std::
     line_grad_u = std::to_string(cell_amount)+"\n(\n";
     grad_u_file << line_grad_u;
     for(int i=0;i<cell_amount;i++){
-        grad_u_file << cell_map_saver.map[i].printQ();
+        grad_u_file << cells[i].printQ(celL_results[i].q_crit);
     }
     line_grad_u = ")\n;\n";
     grad_u_file << line_grad_u;
@@ -115,23 +123,22 @@ bool toBeRemoved(char c)
     }
 }
 
-void threadableMath(int cell_amount_thread,int cell_start_thread,int threadNR,int debug_one,cellMapSaver* cellMap){
+void threadableMath(int cell_start_thread, int cell_end_thread,int threadNR, uint64_t start_time, std::vector<cell> cells, std::vector<cell_result> results){
     int portion_of_then = 1;
-    for(int i=cell_start_thread;i<cell_amount_thread;i++){
-        if(cellMap->map[i].exists){
-            //cellMap->map[i].determineCenter();
-            //cellMap->map[i].determineNeighbours(cellMap->map);
-            cellMap->map[i].math(cellMap->map);
-            if(i/cell_amount_thread>= 0.1*portion_of_then){
-                        portion_of_then += 1;
-                        std::cout<<"completed: "<<0.1*portion_of_then<<std::endl;
-                    }
-            if(debug_one){
-                std::cout<<"Run: "<<i<<"Of Thread NR."<<threadNR<<std::endl;
-            }  
+    for(int i=cell_start_thread;i<cell_end_thread;i++){
+        if(cells[i].id != -1){
+            //cellMap->cells[i].determineCenter();
+            //cellMap->cells[i].determineNeighbours(cellMap->cells);
+            cells[i].math(cells, &results[i]);
+            if((float)(i-cell_start_thread)/(cell_end_thread-cell_start_thread) >= 0.001*portion_of_then){
+                float t = (getTimeMS()-start_time) / 1000.0;
+                float eta = (t / portion_of_then) * (1000 - portion_of_then);
+                std::cout<<LOC<<"Thread "<<threadNR<<": "<<portion_of_then * 0.1 << "% in " << t <<"s (ETA in " << eta << "s)"<<std::endl;
+                portion_of_then += 1;
+            }
         }
    }
-   std::cout<<"Thread completed"<<std::endl;
+   std::cout<<LOC<<"Thread " <<threadNR<<" completed"<<std::endl;
 }
 
 /*
@@ -152,35 +159,21 @@ xx -> double digit numbers are for run time errors
 
 
 int main(int, char**){
-    std::string filePath;
-    int debug_one;//this exists so we can enable debug mode for the first milestone
-    int debug_one_step_one;//this is unaccessable via config as I don't see a reason for it to be accessable as I only used it as step by step debuging!!!
-    int debug_one_step_two;
-    int debug_one_step_three;
-    int debug_two;//this exists so we can enable debug mode for the second milestone
-    int debug_three;//this exists so we can enable debug mode for the third milestone
-    cellMapSaver cells = cellMapSaver();
-
     double startTime;
     double* CalculateSteps = new double[999];
-    int numberCalculateSteps;
 
     int cell_amount=0;
     int face_amount=0;
 
-    double increment = 0.01;
-
     std::string dummy;
-    if(config(&filePath,&debug_one,&debug_two,&debug_three,&startTime,&debug_one_step_one,&debug_one_step_two,&debug_one_step_three,&increment,CalculateSteps,&numberCalculateSteps) == 1){
-        std::cout << "There was a error while loading the config file." << std::endl << "Enter anything to close the program." << std::endl;
-        std::cin;
-        return 1;
-    }
-    std::cout << "Config loaded successfully" << std::endl;
+    Config config { .calculate_steps = CalculateSteps };
+    load_config(&config);
 
-    std::cout << "Calc number entries is:" << numberCalculateSteps<<" content:"<<std::endl;
-    for(int i=0;i<numberCalculateSteps*3;i++){
-        std::cout<<CalculateSteps[i]<<std::endl;
+    std::cout <<LOC << "Config loaded successfully with path '" << config.filePath << "'" << std::endl;
+
+    std::cout << LOC << "Calc number entries is: " << config.numberCalculateSteps<<" content:"<<std::endl;
+    for(int i=0;i<config.numberCalculateSteps*3;i++){
+        std::cout<<LOC<<"  "<<(int)i/3+1<<". "<<CalculateSteps[i]<<std::endl;
     }
     
 
@@ -190,14 +183,19 @@ int main(int, char**){
     
     */
     std::unordered_map<int,point> point_map;
-    std::ifstream point_file(filePath+"/constant/polyMesh/points");
-    std::string line="ERROR";
+    std::string point_file_path = config.filePath+"/constant/polyMesh/points";
+    std::ifstream point_file(point_file_path);
+    if (!point_file.is_open()) {
+        std::cout << LOC << "ERROR: could not open file '" << point_file_path << "'" << std::endl;
+        exit(1);
+    }
+    std::string line;
     int number_of_entries=-1;
     for(int i=0;i<19;i++){
         std::getline(point_file,line);//skips the first 19 lines of the file unimportant
     }
     std::getline(point_file,line);
-    std::cout << filePath<<std::endl;
+    std::cout <<LOC<< config.filePath<<std::endl;
     number_of_entries = std::stoi(line);
     std::getline(point_file,line);//gets rid of a unwanted line
     for(int i=0;i<number_of_entries;i++){
@@ -205,8 +203,8 @@ int main(int, char**){
         //remmove brakets  ex: "(0 0 0)"" --> "0 0 0 "
         line.erase(std::remove_if(line.begin(),line.end(),&toBeRemoved),line.end());
         line += ' ';
-        if(debug_one == 1){
-            std::cout<<"Line after processing (points) "<< line << std::endl;
+        if(config.debug_one == 1){
+            std::cout<<LOC<<"Line after processing (points) "<< line << std::endl;
         }
         //seperate into bits ex: "0 0 0" -> 3 values in a array
         double values[3];
@@ -216,33 +214,27 @@ int main(int, char**){
         int j=0;
         while(j<2){
             while(a<line.size()){
-                if(debug_one==1){
-                    std::cout <<"current character:"<< line[a]<<std::endl<<"Current value of a: " << a<<std::endl;
+                if(config.debug_one==1){
+                    std::cout <<LOC<<"current character:"<< line[a]<<std::endl<<"Current value of a: " << a<<std::endl;
                 }
                 if(line[a]==' '){
-                    if(debug_one==1){
-                        std::cout <<"trying to convert: "<< tempString << std::endl;
-                        std::cout << std::endl << " current value[" << j <<"] = "<< values[j] <<std::endl;
-                        if(debug_one_step_one==1){
-                            std::cin>>dummy;
-                        }
+                    if(config.debug_one==1){
+                        std::cout <<LOC<<"trying to convert: "<< tempString << std::endl;
+                        std::cout <<LOC << " current value[" << j <<"] = "<< values[j] <<std::endl;
                     }
                     values[j]=std::stod(tempString);
                     
                     
-                    if(debug_one==1){
-                        std::cout <<"the conversion: "<< std::stod(tempString) << std::endl << " new value[" << j <<"] = "<< values[j] <<std::endl<<" the temp string was reste to: |"<<tempString<<std::endl;
-                        if(debug_one_step_one==1){
-                            std::cin>>dummy;
-                        }
+                    if(config.debug_one==1){
+                        std::cout <<LOC<<"the conversion: "<< std::stod(tempString) << std::endl << " new value[" << j <<"] = "<< values[j] <<std::endl<<" the temp string was reste to: |"<<tempString<<std::endl;
                     }
                     tempString="";
                     j++;
                     
                 }else{
                     tempString += line[a];
-                    if(debug_one==1){
-                        std::cout <<"new temp sting: |"<< tempString<< std::endl;
+                    if(config.debug_one==1){
+                        std::cout <<LOC<<"new temp sting: |"<< tempString<< std::endl;
                     }
 
                 }
@@ -252,20 +244,18 @@ int main(int, char**){
         }
         //create point 
         point_map[i] = point(values[0],values[1],values[2]);
-        point_map[i].id=i;
-        if(debug_one == 1){
-            std::cout<<"Point object: x: "<< point_map[i].x << " y: "<< point_map[i].y << " z: "<< point_map[i].z << std::endl;
+        if(config.debug_one == 1){
+            std::cout<<LOC<<"Point object: x: "<< point_map[i].x << " y: "<< point_map[i].y << " z: "<< point_map[i].z << std::endl;
         }
     }
     point_file.close();
-    std::cout << "Done with the points" <<std::endl;
+    std::cout <<LOC<< "Done with the points" <<std::endl;
     /*
     
     Second we create the faces
 
     */
-    std::unordered_map<int,face> face_map;
-    std::ifstream face_file(filePath+"/constant/polyMesh/faces");
+    std::ifstream face_file(config.filePath+"/constant/polyMesh/faces");
     number_of_entries=-1;
     for(int i=0;i<19;i++){
         std::getline(face_file,line);//skips the first 19 lines of the file unimportant
@@ -273,6 +263,11 @@ int main(int, char**){
     std::getline(face_file,line);
     number_of_entries = std::stoi(line);
     face_amount = number_of_entries;
+    
+    std::vector<cell> cells = std::vector(number_of_entries, cell());
+    std::vector<cell_result> results = std::vector(number_of_entries, cell_result {});
+    std::vector<face> faces = std::vector(face_amount, face { });
+
     std::getline(face_file,line);//gets rid of a unwanted line
     for(int i=0;i<number_of_entries;i++){
         std::getline(face_file,line);//get line
@@ -280,8 +275,8 @@ int main(int, char**){
         line[0]='(';//replaces the 4 in the dataset with a ' ' to fix a issue
         line.erase(std::remove_if(line.begin(),line.end(),&toBeRemoved),line.end());
         line += ' ';
-        if(debug_one == 1){
-            std::cout<<"Line after processing (face) "<< line << std::endl;
+        if(config.debug_one == 1){
+            std::cout<<LOC<<"Line after processing (face) "<< line << std::endl;
         }
         //seperate into bits ex: "0 0 0 0" -> 4 values in a array
         double values[4];
@@ -291,38 +286,31 @@ int main(int, char**){
         int j=0;
         while(j<4){
             while(a<line.size()&&j<4){
-                if(debug_one==1){
-                    std::cout <<"current character:"<< line[a]<<std::endl<<"Current value of a: " << a<<std::endl;
+                if(config.debug_one==1){
+                    std::cout <<LOC<<"current character:"<< line[a]<<std::endl<<"Current value of a: " << a<<std::endl;
                 }
                 if(line[a]==' '){
-                    if(debug_one==1){
-                        std::cout <<"trying to convert: "<< tempString << std::endl;
-                        std::cout << std::endl << " current value[" << j <<"] = "<< values[j] <<std::endl;
-                        if(debug_one_step_two==1){
-                            std::cin>>dummy;
-                        }
+                    if(config.debug_one==1){
+                        std::cout <<LOC<<"trying to convert: "<< tempString << std::endl;
+                        std::cout <<LOC<< std::endl << " current value[" << j <<"] = "<< values[j] <<std::endl;
                     }
                     if(tempString==" "){
-                        std::cout<<"SOMETHING MESSED UP"<<std::endl;
-                        std::cin >> dummy;
-                        return 1;
+                        std::cout<<LOC<<"ERROR: SOMETHING MESSED UP"<<std::endl;
+                        exit(1);
                     }
                     values[j]=std::stoi(tempString);
                     
                     
-                    if(debug_one==1){
-                        std::cout <<"the conversion: "<< std::stoi(tempString) << std::endl << " new value[" << j <<"] = "<< values[j] <<std::endl<<" the temp string was reste to: |"<<tempString<<std::endl;
-                        if(debug_one_step_two==1){
-                            std::cin>>dummy;
-                        }
+                    if(config.debug_one==1){
+                        std::cout <<LOC<<"the conversion: "<< std::stoi(tempString) << std::endl << " new value[" << j <<"] = "<< values[j] <<std::endl<<" the temp string was reste to: |"<<tempString<<std::endl;
                     }
                     tempString="";
                     j++;
                     
                 }else{
                     tempString += line[a];
-                    if(debug_one==1){
-                        std::cout <<"new temp sting: |"<< tempString<< std::endl;
+                    if(config.debug_one==1){
+                        std::cout <<LOC<<"new temp sting: |"<< tempString<< std::endl;
                     }
 
                 }
@@ -331,25 +319,25 @@ int main(int, char**){
             a=0;
         }
         //create point 
-        face_map[i] = face(point_map[values[0]],point_map[values[1]],point_map[values[2]],point_map[values[3]]);
-        face_map[i].id = i;
-        if(debug_one == 1){
-            std::cout<<"face corner IDs: "<< values[0] << " , "<< values[1] << " , "<< values[2] << " , "<< values[3]<< std::endl;
+        faces[i] = face(point_map[values[0]],point_map[values[1]],point_map[values[2]],point_map[values[3]]);
+        faces[i].id = i;
+        if(config.debug_one == 1){
+            std::cout<<LOC<<"face corner IDs: "<< values[0] << " , "<< values[1] << " , "<< values[2] << " , "<< values[3]<< std::endl;
             
         }
     }
     /*
     for(int i=0;i<number_of_entries;i++){
-        std::cout<<face_map[i].printCorners()<<std::endl;
+        std::cout<<LOC<<face_map[i].printCorners()<<std::endl;
     }*/
     face_file.close();
-    std::cout << "Done with the faces" <<std::endl;
+    std::cout << LOC<<"Done with the faces" <<std::endl;
     /*
     
     then we read the face ownerships
 
     */
-    std::ifstream face_file_o(filePath+"/constant/polyMesh/owner");
+    std::ifstream face_file_o(config.filePath+"/constant/polyMesh/owner");
     number_of_entries=-1;
     for(int i=0;i<20;i++){
         std::getline(face_file_o,line);//skips the first 19 lines of the file unimportant
@@ -360,34 +348,26 @@ int main(int, char**){
     int value = 0;
     for(int i=0;i<number_of_entries;i++){
         std::getline(face_file_o,line);
-        if(debug_one==1){
-            std::cout <<"Atempting to convert to int:"<< line <<std::endl;
-            if(debug_one_step_three==1){
-                int a;
-                std::cin>>dummy;
-            }
+        if(config.debug_one==1){
+            std::cout <<LOC<<"Atempting to convert to int:"<< line <<std::endl;
         }
         value = std::stoi(line);
         
         
-        face_map[i].owners[0]= value;
-        if(debug_one==1){
-            std::cout<< std::endl <<"Set cell id "<< value <<" as owner of face id"<< i <<std::endl;
-            if(debug_one_step_three==1){
-                int a;
-                std::cin>>a;
-            }
+        faces[i].owners[0]= value;
+        if(config.debug_one==1){
+            std::cout<<LOC<<"Set cell id "<< value <<" as owner of face id"<< i <<std::endl;
         }
     }
     face_file_o.close();
-    std::cout << "Done with the face ownership" <<std::endl;
+    std::cout <<LOC<< "Done with the face ownership" <<std::endl;
     /*
     
     then we read the face nighbours
     
     */
 
-    std::ifstream face_file_n(filePath+"/constant/polyMesh/neighbour");
+    std::ifstream face_file_n(config.filePath+"/constant/polyMesh/neighbour");
     number_of_entries=-1;
     for(int i=0;i<20;i++){
         std::getline(face_file_n,line);//skips the first 19 lines of the file unimportant
@@ -398,25 +378,19 @@ int main(int, char**){
     int value_i = 0;
     for(int i=0;i<number_of_entries;i++){
         std::getline(face_file_n,line);
-        if(debug_one==1){
-            std::cout <<"Atempting to convert to int:"<< line <<std::endl;
-            if(debug_one_step_three==1){
-                std::cin>>dummy;
-            }
+        if(config.debug_one==1){
+            std::cout <<LOC<<"Atempting to convert to int:"<< line <<std::endl;
         }
         value_i = std::stoi(line);
         line = "-1";
         
-        face_map[i].owners[1]= value_i;
-        if(debug_one==1){
-            std::cout<< std::endl <<"Set cell id "<< value_i <<" as owner of face id"<< i <<std::endl;
-            if(debug_one_step_three==1){
-                std::cin>>dummy;
-            }
+        faces[i].owners[1]= value_i;
+        if(config.debug_one==1){
+            std::cout<<LOC<<"Set cell id "<< value_i <<" as owner of face id"<< i <<std::endl;
         }
     }
     face_file_n.close();
-    std::cout << "Done with the face neighbours" <<std::endl;
+    std::cout <<LOC<< "Done with the face neighbours" <<std::endl;
     /*
     
     now make the cells 
@@ -424,163 +398,87 @@ int main(int, char**){
     */
     for(int i=0;i<face_amount;i++){
         bool tempbool=false;
-        if(debug_one){
-            std::cout<<std::endl<<"#####################################"<<std::endl<<"Showing face ID:"<<i<<std::endl<<"Owner 0: "<<face_map[i].owners[0]<<std::endl;
-            std::cout<<"Owner 1: "<<face_map[i].owners[1]<<std::endl;
+        if(config.debug_one){
+            std::cout<<LOC<<std::endl<<"#####################################"<<std::endl<<"Showing face ID:"<<i<<std::endl<<"Owner 0: "<<faces[i].owners[0]<<std::endl;
+            std::cout<<LOC<<"Owner 1: "<<faces[i].owners[1]<<std::endl;
         }
-        if(cells.map[face_map[i].owners[0]].exists && face_map[i].owners[0]!= -1){
-            cells.map[face_map[i].owners[0]].addFace(face_map[i]);
-            cells.map[face_map[i].owners[0]].addNighbour(face_map[i].owners[1]);
-            if(debug_one){
-                std::cout<<"Declared additional face for Cell:"<<face_map[i].owners[0]<<std::endl;
+        if(cells[faces[i].owners[0]].id != -1 && faces[i].owners[0]!= -1){
+            cells[faces[i].owners[0]].addNeighbour(faces[i].owners[1]);
+            if(config.debug_one){
+                std::cout<<LOC<<"Declared additional face for Cell:"<<faces[i].owners[0]<<std::endl;
             }
         }else{
-            if(face_map[i].owners[0]!= -1){
-                cells.map[face_map[i].owners[0]] = cell();
-                cells.map[face_map[i].owners[0]].id = face_map[i].owners[0];
-                cells.map[face_map[i].owners[0]].addFace(face_map[i]);
-                cells.map[face_map[i].owners[0]].addNighbour(face_map[i].owners[1]);
+            if(faces[i].owners[0]!= -1){
+                cells[faces[i].owners[0]] = cell();
+                cells[faces[i].owners[0]].id = faces[i].owners[0];
+                cells[faces[i].owners[0]].addNeighbour(faces[i].owners[1]);
                 tempbool=true;
                 cell_amount++;
-                if(debug_one){
-                std::cout<<"Declared Cell:"<<face_map[i].owners[0]<<std::endl;
+                if(config.debug_one){
+                    std::cout<<LOC<<"Declared Cell:"<<faces[i].owners[0]<<std::endl;
                 }
             }
         }
-        if ( cells.map[face_map[i].owners[1]].exists && face_map[i].owners[1]!= -1)
+        if ( cells[faces[i].owners[1]].id != -1 && faces[i].owners[1]!= -1)
         {
-           cells.map[face_map[i].owners[1]].addFace(face_map[i]);
-           cells.map[face_map[i].owners[1]].addNighbour(face_map[i].owners[0]);
-           if(debug_one){
-                std::cout<<"Declared additional face for Cell:"<<face_map[i].owners[1]<<std::endl;
+           cells[faces[i].owners[1]].addNeighbour(faces[i].owners[0]);
+           if(config.debug_one){
+                std::cout<<LOC<<"Declared additional face for Cell:"<<faces[i].owners[1]<<std::endl;
             }
         }else{
-            if(face_map[i].owners[1]!= -1){
-                cells.map[face_map[i].owners[1]] = cell();
-                cells.map[face_map[i].owners[1]].id = face_map[i].owners[1];
-                cells.map[face_map[i].owners[1]].addFace(face_map[i]);
-                cells.map[face_map[i].owners[1]].addNighbour(face_map[i].owners[0]);
+            if(faces[i].owners[1]!= -1){
+                cells[faces[i].owners[1]] = cell();
+                cells[faces[i].owners[1]].id = faces[i].owners[1];
+                cells[faces[i].owners[1]].addNeighbour(faces[i].owners[0]);
                 tempbool=true;
                 cell_amount++;
-                if(debug_one){
-                    std::cout<<"Declared Cell:"<<face_map[i].owners[1]<<std::endl;
+                if(config.debug_one){
+                    std::cout<<LOC<<"Declared Cell:"<<faces[i].owners[1]<<std::endl;
                 }
             }    
         }
     }
 
+    std::cout <<LOC<<"Done with cell creation"<<std::endl;
+    std::cout<<LOC<<"cell amount: "<<cell_amount<<std::endl;
 
+    std::cout <<LOC<<"Done with cell computations"<<std::endl;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    std::cout <<"Done with cell creation"<<std::endl;
-    std::cout<<"cell amount:"<<cell_amount<<std::endl;
-   /*
-   
-   now make the cells determine there nighbours and cell centers
-
-   we are using threading as is speeds up the loading
-   first we spread the load based on the increments
-   
-   */
-  /*
-  if(cell_amount>25000){
-    
-    int thread_load=cell_amount*increment;//int rounding is intended
-    int num_threads = cell_amount/thread_load;
-    int completed_cells=0;
-    if(cell_amount%thread_load>0){
-        num_threads++;
-    }
-    std::cout<<"trying to create Threads number:"<<num_threads<<std::endl;
-    std::thread* threads[num_threads];
-
-    for(int i=0;i<num_threads;i++){
-        threads[i] = new std::thread(threadableMath,thread_load*(i+1),(i)*thread_load,i,debug_one,&cells);
-    }
-    std::cout<<"Threads created"<<std::endl;
-    for(int i=0;i<num_threads;i++){
-        threads[i]->join();
-    }
-  }else{
-    double passed_increments = 0.0;
-   for(int i=0;i<cell_amount;i++){
-        cells.map[i].determineCenter();
-        cells.map[i].determineNeighbours(cells.map);
-        if((i*1.0)/cell_amount-increment-passed_increments>0.0){
-            passed_increments+=increment;
-            std::cout<<"Cell math done to "<<(i*1.0)/cell_amount<<std::endl;
-        }
-        if(debug_one){
-            std::cout<<"Run: "<<i<<std::endl;
-        }  
-   }
-  }*/
-   std::cout <<"Done with cell computations"<<std::endl;
-   /*
-   
-   Now load volocities and begin simulation maths
-   
-   */
-    //volocityLoad(&cells.map,startTime,filePath);
-    
-    
-    //std::cout<<line<<std::endl;
     double start;
     double end;
     double increment_time;
     std::string filePath_volocities;
     std::string filePath_centers;
     std::string C_line;
-    for(int i=0;i<number_of_entries;i++){
+    for(int i=0;i<config.numberCalculateSteps*3;i+=3){
         start = CalculateSteps[i];
         end = CalculateSteps[i+1];
         increment_time = CalculateSteps[i+2];
         for(double n=start;n<=end;n+=increment_time){
             std::string fileNumber = std::to_string(n);
-            std::string fileNumberExtracted = "";
-            int a=0;
-            bool is_integer=false;
-            while(fileNumber[a]!='.'){
-                fileNumberExtracted+=fileNumber[a];
-                a++;
-                if(a>fileNumber.length()){
-                    is_integer = true;
+            while (fileNumber.length() > 1) {
+                char c = fileNumber.back();
+                if (c != '0' && c != '.') {
                     break;
                 }
+                fileNumber.pop_back();
             }
-            if(is_integer){
-                fileNumberExtracted=fileNumber;
-            }else{
-                fileNumberExtracted+=fileNumber[a];//(adds the dot)
-                a++;
-                while(fileNumber[a]!='0'){
-                    fileNumberExtracted+=fileNumber[a];
-                    a++;
-                }
-            }
-            filePath_volocities = filePath;
+            filePath_volocities = config.filePath;
             filePath_volocities += "/";
-            filePath_volocities += fileNumberExtracted;
+            filePath_volocities += fileNumber;
             filePath_centers = filePath_volocities;
             filePath_centers += "/C";
             filePath_volocities += "/U";
-            std::cout<<filePath_volocities<<std::endl;
-            std::cin>>dummy;
             std::ifstream volocity_file(filePath_volocities);
             std::ifstream center_file(filePath_centers);
+            if(!volocity_file.is_open()){
+                std::cout<<LOC<<"ERROR: failed to open file '"<<filePath_volocities<<"'"<<std::endl;
+                exit(1);
+            }
+            if(!center_file.is_open()){
+                std::cout<<LOC<<"ERROR: failed to open file"<<filePath_centers<<"'"<<std::endl;
+                exit(1);
+            }
             line="";
             C_line="";
             number_of_entries=-1;
@@ -590,11 +488,9 @@ int main(int, char**){
             }
             std::getline(volocity_file,line);
             std::getline(center_file,C_line);
-            if(volocity_file.is_open()==false){
-                std::cout<<"FILE FAILED TO OPEN"<<std::endl;
-                std::cin>>line;
-            }
+            
             number_of_entries = std::stoi(line);
+            std::cout << LOC << "entries: " << number_of_entries << std::endl;
             std::getline(volocity_file,line);//gets rid of a unwanted line
             std::getline(center_file,C_line);
             for(int i=0;i<number_of_entries;i++){
@@ -643,50 +539,53 @@ int main(int, char**){
                     }
                     a=0;
                 }
-                cells.map[i].internalVolocity = volocity(values[0],values[1],values[2]);
-                cells.map[i].center = point(c_value[0],c_value[1],c_value[2]);
+                cells[i].internalVolocity = velocity(values[0],values[1],values[2]);
+                cells[i].center = point(c_value[0],c_value[1],c_value[2]);
             }
             volocity_file.close();
-            std::cout << "Done loading volocities" <<std::endl;
-            if(debug_two){
-                printValues(cells.map,cell_amount);
+            std::cout << LOC << "Done loading velocities" <<std::endl;
+            if(config.debug_two){
+                printValues(cells,cell_amount);
                 std::cin >> dummy;
             }
             uint64_t start_time;
             start_time = getTimeMS();
 
             int portions_of_then = 1;
-            if(cell_amount>50000){
-                int num_threads = 11;
-                int thread_load = cell_amount / 10;
-                std::cout<<"trying to create Threads number:"<<num_threads<<std::endl;
+            if(config.use_threads){
+                if (config.thread_count < 1) panic("Must use at least one thread, but a config value of " << config.thread_count << " was provided");
+                int num_threads = config.thread_count;
+                num_threads += 1; // one residual thread
+                int thread_load = cell_amount / (num_threads);
+                std::cout<<LOC<<"trying to create Threads number:"<<num_threads<<std::endl;
                 std::thread* threads[num_threads];
 
                 for(int i=0;i<num_threads;i++){
-                    std::cout<<"Thread created"<<std::endl;
-                    threads[i] = new std::thread(threadableMath,thread_load*(i+1),(i)*thread_load,i,debug_one,&cells);
+                    std::cout<<LOC<<"Thread created"<<std::endl;
+                    threads[i] = new std::thread(threadableMath,thread_load*i,thread_load*(i+1),i,start_time, cells, results);
                 }
-                std::cout<<"All threads created"<<std::endl;
+                std::cout<<LOC<<"All threads created"<<std::endl;
                 for(int i=0;i<num_threads;i++){
                     threads[i]->join();
                 }
+                std::cout<<LOC<<"All threads done"<<std::endl;
             }
             else{
                 for(int i=0;i<cell_amount;i++){
-                    cells.map[i].math(cells.map);
-                    if(i/cell_amount>= 0.1*portions_of_then){
+                    cells[i].math(cells, &results[i]);
+                    if((float)i/cell_amount >= 0.001*portions_of_then){
+                        float t = (getTimeMS()-start_time) / 1000.0;
+                        float eta = (t / portions_of_then) * (1000 - portions_of_then);
+                        std::cout<<LOC<<"completed "<<portions_of_then / 10.0 << "% in " << t <<"s (ETA in " << eta << "s)"<<std::endl;
                         portions_of_then += 1;
-                        std::cout<<"completed: "<<0.1*portions_of_then<<std::endl;
                     }
                 }
             }
-            std::cout<<"THE math took: "<<start_time - getTimeMS()<<" ms"<<std::endl;
-            printToFile(cells,fileNumberExtracted,filePath,cell_amount);
-            printToFileQ(cells,fileNumberExtracted,filePath,cell_amount);
-
+            std::cout<<LOC<<"The math took: "<<(getTimeMS()-start_time) / 1000.0 <<"s"<<std::endl;
+            printToFile(cells, results, fileNumber, config.filePath, cell_amount);
+            printToFileQ(cells, results, fileNumber, config.filePath, cell_amount);
         }
     }
-    std::cin>>dummy;
     return 0;
 }
 

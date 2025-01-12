@@ -1,0 +1,26 @@
+#!/bin/sh
+echo Building...
+make build >0
+echo Done.
+echo Starting fluid sim in background
+./FluidSim >0 &
+PID=$(pgrep FluidSim)
+if [ -z "${PID}" ]; then
+    echo No FluidSim found
+    exit
+fi
+echo Found FluidSim with pid $PID
+echo Sleeping for 20 seconds...
+sleep 20
+echo Warmup done
+echo Recording for 4 minutes...
+sudo perf record -F 99 -p $PID --call-graph dwarf -- sleep 240
+echo Done recording
+kill $PID
+echo killed FluidSim
+sudo perf script > out.perf
+echo Converted
+stackcollapse-perf.pl out.perf > out.folded
+echo Collapsed
+flamegraph.pl out.folded > flamegraph.svg
+echo generated ./flamegraph.svg

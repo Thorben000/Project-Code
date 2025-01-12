@@ -2,118 +2,41 @@
 #define CELL_CPP
 
 #include "cell.h"
+#include "debug.h"
 #include "face.h"
 #include "point.h"
-#include <unordered_map>
+#include "velocity.h"
+#include <array>
 #include <iostream>
 #include <cmath>
-cell::cell(){exists = false;declaredFaces=0;declaredNighbours=0;};
-
-void cell::addFace(face face){
-    faces[declaredFaces] = face;
-    //std::cout<<face.id<<std::endl;
-    declaredFaces+=1;
-    exists = true;
-    //std::cout<<"Cell id:"<<id<<std::endl<<"current faces:"<<printFaces()<<std::endl;
-    return;
+#include <vector>
+cell::cell(): key { -1, -1, -1, -1, -1, 1}, id(-1) {
+    
 }
-void cell::addNighbour(int id_x){
-    if(id_x==-1){
-        key[declaredNighbours] = id;
-        declaredNighbours+=1;
-        return;
+
+
+void cell::addNeighbour(int id_x){
+    for (int i = 0;i < 6;i++) {
+        if (key[i] == -1) {
+            if(id_x==-1){
+                key[i] = id;
+                return;
+            } else {
+                key[i] = id_x;
+            }
+            break;
+        }
     }
-    key[declaredNighbours] = id_x;
-    declaredNighbours+=1;
-    return;
 }
 
 cell::cell(face face1,face face2,face face3,face face4,face face5,face face6){
                 //THis is depricated as it is NEVER called!!!!
-                faces[0] = face1;
-                faces[1] = face2;
-                faces[2] = face3;
-                faces[3] = face4;
-                faces[4] = face5;
-                faces[5] = face6;
+
                 center = point();
-                determineCenter();
-                exists = true;
-                declaredFaces = 6;
-                //
+                
             };
 
-
-void cell::determineNeighbours(std::unordered_map<int,cell> map){
-    //std::cout<<"Doing cellID: "<<id<<std::endl;
-    //std::cout<<"owned faces: "<<printFaces()<<std::endl;
-    for(int i=0;i<6;i++){
-        //std::cout<<" nighbouris option 1 is:"<<map[faces[i].owners[0]].id<<std::endl;
-        //std::cout<<" nighbouris option 2 is:"<<map[faces[i].owners[1]].id<<std::endl;
-        //std::cout<<" self is:"<<id<<std::endl;
-        if(map[faces[i].owners[0]].id!=faces[i].owners[0] && faces[i].owners[0]!=-1){std::cout<<"ERROR Cell ID"<<map[faces[i].owners[0]].id<<" at "<<faces[i].owners[0]<<std::endl;}
-        if(map[faces[i].owners[1]].id!=faces[i].owners[1] && faces[i].owners[1]!=-1){std::cout<<"ERROR Cell ID"<<map[faces[i].owners[1]].id<<" at "<<faces[i].owners[1]<<std::endl;}
-        if(id != (map[faces[i].owners[0]]).id){
-            key[i] = map[faces[i].owners[0]].id;//sets the first owner as nighbour if it is not self
-            //std::cout<<" chosen was: "<<map[faces[i].owners[0]].id<<std::endl;
-        }else if (faces[i].owners[1]==-1)
-        {
-            key[i] = id;//sets self as nighbour if the second owner does not exist
-            //std::cout<<"Self nighbour"<<std::endl;
-        }else{
-            key[i] = map[faces[i].owners[1]].id;//sets second owner as nighbour
-            //std::cout<<" chosen was:  "<<map[faces[i].owners[1]].id<<std::endl;
-        }
-        
-    }
-    return;
-}
-
-void cell::determineCenter(){
-    double lowerPoint[3];// index:representation; 0:x 1:y 2:z
-    double higherPoint[3];
-    if(declaredFaces!=6){
-        int dummy;
-        std::cout<<"SOMETHING MESSED UP IN CELL LOADING THIS ONE ONLY HAS:"<<declaredFaces<<" FACES DECLARED"<<std::endl;
-        std::cin>>dummy;
-        return;
-    }
-    for(int i=0;i<3;i++){
-        lowerPoint[i] = -1;
-        higherPoint[i] = -1;
-    }
-    for(int i=0;i<6;i++){
-        for(int b=0;b<3;b++){
-            //x
-            if(lowerPoint[0]==-1 || lowerPoint[0]> faces[i].corners[b].x){
-                lowerPoint[0]=faces[i].corners[b].x;
-            }
-            if (higherPoint[0]==-1 || higherPoint[0] < faces[i].corners[b].x){
-                higherPoint[0]=faces[i].corners[b].x;
-            }
-            //y
-            if(lowerPoint[1]==-1 || lowerPoint[1]> faces[i].corners[b].y){
-                lowerPoint[1]=faces[i].corners[b].y;
-            }
-            if (higherPoint[1]==-1 || higherPoint[1] < faces[i].corners[b].y){
-                higherPoint[1]=faces[i].corners[b].y;
-            }
-            //z
-            if(lowerPoint[2]==-1 || lowerPoint[2] > faces[i].corners[b].z){
-                lowerPoint[2]=faces[i].corners[b].z;
-            }
-            if (higherPoint[2]==-1 || higherPoint[2] < faces[i].corners[b].z){
-                higherPoint[2]=faces[i].corners[b].z;
-            }
-        }
-    }
-    center.x = higherPoint[0] - (higherPoint[0] - lowerPoint[0])/2.0;
-    center.y = higherPoint[1] - (higherPoint[1] - lowerPoint[1])/2.0;
-    center.z = higherPoint[2] - (higherPoint[2] - lowerPoint[2])/2.0;
-    return;
-}
-
-void cell::setVolocity(volocity volocity){
+void cell::setVolocity(velocity volocity){
     internalVolocity = volocity;
     return;
 }
@@ -143,7 +66,8 @@ std::string cell::printCenter(){
 
 std::string cell::printNeighbours(){
     std::string returnString= "(";;
-    for(int i=0;i<declaredNighbours;i++){
+    for(int i=0;i<6;i++){
+        if (key[i] == -1) break;
         returnString += std::to_string(key[i]);
         returnString += ' ';
     }
@@ -151,38 +75,7 @@ std::string cell::printNeighbours(){
     return returnString;
 }
 
-std::string cell::printFaces(){
-    std::string returnString= "(";;
-    for(int i=0;i<declaredFaces;i++){
-        returnString += std::to_string(faces[i].id);
-        returnString += ' ';
-    }
-    returnString += ')';
-    return returnString;
-}
-std::string cell::printCorners(){
-    std::string returnString= "(";
-    for(int i=0;i<6;i++){
-        returnString += " (";
-        for(int b=0;b<4;b++){
-            returnString += "Point id: ";
-            returnString += std::to_string(faces[i].corners[b].id);
-            returnString += '[';
-            returnString += std::to_string(faces[i].corners[b].x);
-            returnString += ' ';
-            returnString += std::to_string(faces[i].corners[b].y);
-            returnString += ' ';
-            returnString += std::to_string(faces[i].corners[b].z);
-            returnString += "] ";
-            returnString += '\n';
-        }
-        returnString += ") ;";
-        returnString += '\n';
-    }
-    returnString += ')';
-    return returnString;
-}
-std::string cell::printGradiant(){
+std::string cell::printGradient(velocity gradient[3]){
     std::string returnString= "( ";
     for(int i=0;i<3;i++){
         returnString += std::to_string(gradient[i].x);
@@ -195,89 +88,78 @@ std::string cell::printGradiant(){
     returnString += ")\n";
     return returnString;
 }
-std::string cell::printQ(){
+std::string cell::printQ(double q_crit){
     std::string returnString= "( ";
     returnString += std::to_string(q_crit);
     returnString += ")\n";
     return returnString;
 }
-double cell::trace_base(){
-double return_value=0;
-return_value+=gradient[0].x;
-return_value+=gradient[1].y;
-return_value+=gradient[2].z;
-return return_value;
+double cell::trace_base(velocity gradient[3]){
+    double return_value=0;
+    return_value+=gradient[0].x;
+    return_value+=gradient[1].y;
+    return_value+=gradient[2].z;
+    return return_value;
 }
-double cell::trace_other(){
-double return_value=0;
-return_value+=gradient[0].x * gradient[0].x + gradient[0].y*gradient[1].x + gradient[0].z*gradient[2].x;
-return_value+=gradient[1].x*gradient[0].y + gradient[1].y*gradient[1].y + gradient[1].z*gradient[2].y;
-return_value+=gradient[2].x*gradient[0].z +  gradient[2].y*gradient[1].z + gradient[2].z*gradient[2].z;
-return return_value;
+double cell::trace_other(velocity gradient[3]){
+    double return_value=0;
+    return_value+=gradient[0].x * gradient[0].x + gradient[0].y*gradient[1].x + gradient[0].z*gradient[2].x;
+    return_value+=gradient[1].x*gradient[0].y + gradient[1].y*gradient[1].y + gradient[1].z*gradient[2].y;
+    return_value+=gradient[2].x*gradient[0].z +  gradient[2].y*gradient[1].z + gradient[2].z*gradient[2].z;
+    return return_value;
 }
 
-void cell::Q_crit_math(){
-q_crit = (1./2.) * std::pow(trace_base(),2);
-q_crit = (1./2.) * trace_other();
-return;
+double manual_abs(double d) {
+    return d > 0 ? d : -d;
+    //return std::fabs(d);
 }
-void cell::math(std::unordered_map<int,cell> map){
+
+void cell::math(std::vector<cell> cells, cell_result* result){
     int keys_x[2] = {id,id};
-    int x_def=0;
     int keys_y[2] = {id,id};
-    int y_def=0;
     int keys_z[2] = {id,id};
-    int z_def=0;
     
     for(int i=0;i<6;i++){
-        if(map[key[i]].center.x-center.x > 0){
+        if(cells[key[i]].center.x-center.x > 0){
             keys_x[0] = key[i];
-            x_def++;
         }
-        else if(map[key[i]].center.y-center.y > 0){
+        else if(cells[key[i]].center.y-center.y > 0){
             keys_y[0] = key[i];
-            y_def++;
         }
-        else if(map[key[i]].center.z-center.z > 0){
+        else if(cells[key[i]].center.z-center.z > 0){
             keys_z[0] = key[i];
-            z_def++;
         }
-        else if(map[key[i]].center.x-center.x < 0){
+        else if(cells[key[i]].center.x-center.x < 0){
             keys_x[1] = key[i];
-            x_def++;
         }
-        else if(map[key[i]].center.y-center.y < 0){
+        else if(cells[key[i]].center.y-center.y < 0){
             keys_y[1] = key[i];
-            y_def++;
         }
-        else if(map[key[i]].center.z-center.z < 0){
+        else if(cells[key[i]].center.z-center.z < 0){
             keys_z[1] = key[i];
-            z_def++;
         }
     }
-    double x_distance = std::fabs(center.x-map[keys_x[1]].center.x);
-    if (x_distance<std::fabs(center.x-map[keys_x[0]].center.x)) {x_distance = std::fabs(center.x-map[keys_x[0]].center.x);}
-    /*std::cout<<x_distance<<std::endl;
-    std::cout<<(map[keys_x[0]].internalVolocity.x-map[keys_x[1]].internalVolocity.x)/(2*x_distance)<<" , "<<
-                            (map[keys_x[0]].internalVolocity.y-map[keys_x[1]].internalVolocity.y)/(2*x_distance)<<" , "<<
-                            (map[keys_x[0]].internalVolocity.z-map[keys_x[1]].internalVolocity.z)/(2*x_distance)<<std::endl;*/
-    gradient[0] = volocity( (map[keys_x[0]].internalVolocity.x-map[keys_x[1]].internalVolocity.x)/(2*x_distance),
-                            (map[keys_x[0]].internalVolocity.y-map[keys_x[1]].internalVolocity.y)/(2*x_distance),
-                            (map[keys_x[0]].internalVolocity.z-map[keys_x[1]].internalVolocity.z)/(2*x_distance)
+    double x_distance = manual_abs(center.x-cells[keys_x[1]].center.x);
+    if (x_distance<manual_abs(center.x-cells[keys_x[0]].center.x)) {x_distance = manual_abs(center.x-cells[keys_x[0]].center.x);}
+
+    result->gradient[0] = velocity( (cells[keys_x[0]].internalVolocity.x-cells[keys_x[1]].internalVolocity.x)/(2*x_distance),
+                            (cells[keys_x[0]].internalVolocity.y-cells[keys_x[1]].internalVolocity.y)/(2*x_distance),
+                            (cells[keys_x[0]].internalVolocity.z-cells[keys_x[1]].internalVolocity.z)/(2*x_distance)
                         );
-    double y_distance = std::fabs(center.x-map[keys_x[1]].center.x);
-    if (y_distance<std::fabs(center.x-map[keys_x[0]].center.x)) {y_distance = std::fabs(center.x-map[keys_x[0]].center.x);}
-    gradient[1] = volocity( (map[keys_y[0]].internalVolocity.x-map[keys_y[1]].internalVolocity.x)/(2*y_distance),
-                            (map[keys_y[0]].internalVolocity.y-map[keys_y[1]].internalVolocity.y)/(2*y_distance),
-                            (map[keys_y[0]].internalVolocity.z-map[keys_y[1]].internalVolocity.z)/(2*y_distance)
+    double y_distance = manual_abs(center.x-cells[keys_x[1]].center.x);
+    if (y_distance<manual_abs(center.x-cells[keys_x[0]].center.x)) {y_distance = manual_abs(center.x-cells[keys_x[0]].center.x);}
+    result->gradient[1] = velocity( (cells[keys_y[0]].internalVolocity.x-cells[keys_y[1]].internalVolocity.x)/(2*y_distance),
+                            (cells[keys_y[0]].internalVolocity.y-cells[keys_y[1]].internalVolocity.y)/(2*y_distance),
+                            (cells[keys_y[0]].internalVolocity.z-cells[keys_y[1]].internalVolocity.z)/(2*y_distance)
                         );
-    double z_distance = std::fabs(center.x-map[keys_x[1]].center.x);
-    if (z_distance<std::fabs(center.x-map[keys_x[0]].center.x)) {z_distance = std::fabs(center.x-map[keys_x[0]].center.x);}
-    gradient[2] = volocity( (map[keys_z[0]].internalVolocity.x-map[keys_z[1]].internalVolocity.x)/(2*z_distance),
-                            (map[keys_z[0]].internalVolocity.y-map[keys_z[1]].internalVolocity.y)/(2*z_distance),
-                            (map[keys_z[0]].internalVolocity.z-map[keys_z[1]].internalVolocity.z)/(2*z_distance)
+    double z_distance = manual_abs(center.x-cells[keys_x[1]].center.x);
+    if (z_distance<manual_abs(center.x-cells[keys_x[0]].center.x)) {z_distance = manual_abs(center.x-cells[keys_x[0]].center.x);}
+    result->gradient[2] = velocity( (cells[keys_z[0]].internalVolocity.x-cells[keys_z[1]].internalVolocity.x)/(2*z_distance),
+                            (cells[keys_z[0]].internalVolocity.y-cells[keys_z[1]].internalVolocity.y)/(2*z_distance),
+                            (cells[keys_z[0]].internalVolocity.z-cells[keys_z[1]].internalVolocity.z)/(2*z_distance)
                         );
 
-    Q_crit_math();
+    result->q_crit = (1./2.) * std::pow(trace_base(result->gradient), 2)
+                   - (1./2.) * trace_other(result->gradient);
 }
 #endif

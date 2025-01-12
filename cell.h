@@ -3,43 +3,42 @@
 #define CELL_H
 #include "point.h"
 #include "face.h"
-#include "volocity.h"
+#include "velocity.h"
 #include <unordered_map>
+#include <vector>
+
+class cell_result {
+public:
+    velocity gradient[3];
+    double q_crit;
+};
+
 class cell
 {
-private:
-    
-    volocity newVolocity;
-    face faces[6];//WARNING IF THE DATA IS NOT WRITTEN THERE IS NO DEAFAULT SAFTY NET !!!!!!!!!!!!!!!
-    void trace();
-    volocity gradient[3];
-    int key[6];
-    int declaredNighbours;
-    int declaredFaces;
-    double q_crit;
 public:
+    velocity internalVolocity;
     point center;
-    volocity internalVolocity;
-    bool exists;
-    cell();
+    int key[6];
     int id;
+
+    cell();
     cell(face face1,face face2,face face3,face face4,face face5,face face6);
-    void setVolocity(volocity volocity);
+    void setVolocity(velocity volocity);
     void addFace(face face);
     void determineCenter();
-    void determineNeighbours(std::unordered_map<int,cell> map);
-    void math(std::unordered_map<int,cell>);
+    void determineNeighbours(std::vector<cell> cells);
+    void math(std::vector<cell> cells, cell_result* result);
     void update();//sets the new volocity as internal volocity
-    void addNighbour(int id_x);
+    void addNeighbour(int id_x);
     std::string printInternalVolocity();
     std::string printCenter();
     std::string printNeighbours();
     std::string printFaces();
     std::string printCorners();
-    std::string printGradiant();
-    std::string printQ();
-    double trace_base();
-    double trace_other();
-    void Q_crit_math();
+    std::string printGradient(velocity gradient[3]);
+    std::string printQ(double q_crit);
+    double trace_base(velocity gradient[3]);
+    double trace_other(velocity gradient[3]);
 };
+
 #endif

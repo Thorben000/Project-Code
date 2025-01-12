@@ -1,5 +1,23 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 #include <string>
-int config(std::string* file_path,int* debug_one,int* debug_two,int* debug_three,double* start_time,int* debug_one_step_one,int* debug_one_step_two,int* debug_one_step_three,double* increment,double* calculate_steps,int* number_calculate_steps);
+
+struct Config {
+    std::string filePath;
+    int debug_one;
+    int debug_two;
+    int debug_three;
+    int debug_one_step_one;
+    int debug_one_step_two;
+    int debug_one_step_three;
+    bool use_threads;
+    int thread_count;
+    double start_time;
+    double increment;
+    double* calculate_steps;
+    int numberCalculateSteps;
+};
+
+void load_config(Config* config);
+
 #endif
