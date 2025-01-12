@@ -10,19 +10,19 @@
 #include <iostream>
 #include <cmath>
 #include <vector>
-cell::cell(): key { -1, -1, -1, -1, -1, 1}, id(-1) {
+cell::cell(): neighbors { -1, -1, -1, -1, -1, 1}, id(-1) {
     
 }
 
 
 void cell::addNeighbour(int id_x){
     for (int i = 0;i < 6;i++) {
-        if (key[i] == -1) {
+        if (neighbors[i] == -1) {
             if(id_x==-1){
-                key[i] = id;
+                neighbors[i] = id;
                 return;
             } else {
-                key[i] = id_x;
+                neighbors[i] = id_x;
             }
             break;
         }
@@ -67,8 +67,8 @@ std::string cell::printCenter(){
 std::string cell::printNeighbours(){
     std::string returnString= "(";;
     for(int i=0;i<6;i++){
-        if (key[i] == -1) break;
-        returnString += std::to_string(key[i]);
+        if (neighbors[i] == -1) break;
+        returnString += std::to_string(neighbors[i]);
         returnString += ' ';
     }
     returnString += ')';
@@ -120,23 +120,23 @@ void cell::math(std::vector<cell> cells, cell_result* result){
     int keys_z[2] = {id,id};
     
     for(int i=0;i<6;i++){
-        if(cells[key[i]].center.x-center.x > 0){
-            keys_x[0] = key[i];
+        if(cells[neighbors[i]].center.x-center.x > 0){
+            keys_x[0] = neighbors[i];
         }
-        else if(cells[key[i]].center.y-center.y > 0){
-            keys_y[0] = key[i];
+        else if(cells[neighbors[i]].center.y-center.y > 0){
+            keys_y[0] = neighbors[i];
         }
-        else if(cells[key[i]].center.z-center.z > 0){
-            keys_z[0] = key[i];
+        else if(cells[neighbors[i]].center.z-center.z > 0){
+            keys_z[0] = neighbors[i];
         }
-        else if(cells[key[i]].center.x-center.x < 0){
-            keys_x[1] = key[i];
+        else if(cells[neighbors[i]].center.x-center.x < 0){
+            keys_x[1] = neighbors[i];
         }
-        else if(cells[key[i]].center.y-center.y < 0){
-            keys_y[1] = key[i];
+        else if(cells[neighbors[i]].center.y-center.y < 0){
+            keys_y[1] = neighbors[i];
         }
-        else if(cells[key[i]].center.z-center.z < 0){
-            keys_z[1] = key[i];
+        else if(cells[neighbors[i]].center.z-center.z < 0){
+            keys_z[1] = neighbors[i];
         }
     }
     double x_distance = manual_abs(center.x-cells[keys_x[1]].center.x);

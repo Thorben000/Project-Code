@@ -18,7 +18,7 @@ class cell
 public:
     velocity internalVolocity;
     point center;
-    int key[6];
+    int neighbors[6];
     int id;
 
     cell();
