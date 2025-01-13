@@ -125,13 +125,13 @@ bool toBeRemoved(char c)
     }
 }
 
-void threadableMath(int cell_start_thread, int cell_end_thread,int threadNR, uint64_t start_time, std::vector<cell> cells, std::vector<cell_result> results){
+void threadableMath(int cell_start_thread, int cell_end_thread,int threadNR, uint64_t start_time, std::vector<cell> cells, std::vector<cell_result>* results){
     int portion_of_then = 1;
     for(int i=cell_start_thread;i<cell_end_thread;i++){
         if(cells[i].id != -1){
             //cellMap->cells[i].determineCenter();
             //cellMap->cells[i].determineNeighbours(cellMap->cells);
-            cells[i].math(cells, &results[i]);
+            cells[i].math(cells, &(*results)[i]);
             if((float)(i-cell_start_thread)/(cell_end_thread-cell_start_thread) >= 0.001*portion_of_then){
                 float t = (getTimeMS()-start_time) / 1000.0;
                 float eta = (t / portion_of_then) * (1000 - portion_of_then);
@@ -546,7 +546,7 @@ int main(int, char**){
 
                 for(int i=0;i<num_threads;i++){
                     std::cout<<LOC<<"Thread created"<<std::endl;
-                    threads[i] = new std::thread(threadableMath,thread_load*i, std::min(thread_load*(i+1), cell_amount),i,start_time, cells, results);
+                    threads[i] = new std::thread(threadableMath,thread_load*i, std::min(thread_load*(i+1), cell_amount),i,start_time, cells, &results);
                 }
                 std::cout<<LOC<<"All threads created"<<std::endl;
                 for(int i=0;i<num_threads;i++){
