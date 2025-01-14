@@ -15,7 +15,7 @@ Debug mode three:
 Use threads:
 true
 Thread count:
-4
+6
 Start time:
 0
 Increment for threads(above 25000 cells):

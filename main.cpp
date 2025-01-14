@@ -55,7 +55,10 @@ void printToFile(std::vector<cell> cells, std::vector<cell_result> cell_results,
         grad_u_file << line_template_grad_u;
     }
     std::getline(grad_u_template_file,line_template_grad_u);
+    line_template_grad_u += '"';
     line_template_grad_u += extracted_number;
+    line_template_grad_u += '"';
+    line_template_grad_u += ';';
     line_template_grad_u += '\n';
     grad_u_file << line_template_grad_u;
     for(int i=0;i<8;i++){
@@ -85,13 +88,16 @@ void printToFileQ(std::vector<cell> cells, std::vector<cell_result> celL_results
     std::string line_grad_u;
     std::string line_template_grad_u;
     //add hadder
-    for(int i=0;i<13;i++){
+    for(int i=0;i<12;i++){
         std::getline(grad_u_template_file,line_template_grad_u);
         line_template_grad_u+='\n';
         grad_u_file << line_template_grad_u;
     }
     std::getline(grad_u_template_file,line_template_grad_u);
+    line_template_grad_u += '"';
     line_template_grad_u += extracted_number;
+    line_template_grad_u += '"';
+    line_template_grad_u += ';';
     line_template_grad_u += '\n';
     grad_u_file << line_template_grad_u;
     for(int i=0;i<8;i++){
@@ -131,7 +137,8 @@ void threadableMath(int cell_start_thread, int cell_end_thread,int threadNR, uin
         if(cells[i].id != -1){
             //cellMap->cells[i].determineCenter();
             //cellMap->cells[i].determineNeighbours(cellMap->cells);
-            cells[i].math(cells, &(*results)[i]);
+            cell_result* save_result_pointer = &results->at(i);
+            cells[i].math(cells, save_result_pointer);
             if((float)(i-cell_start_thread)/(cell_end_thread-cell_start_thread) >= 0.001*portion_of_then){
                 float t = (getTimeMS()-start_time) / 1000.0;
                 float eta = (t / portion_of_then) * (1000 - portion_of_then);
