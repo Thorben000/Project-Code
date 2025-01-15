@@ -1,5 +1,5 @@
 Name of Dataset:
-Wuerfel
+Simulation_Umstroemung_eines_Wuerfels
 Debug mode one:
 0
 Debug mode one stepping one:
@@ -13,15 +13,15 @@ Debug mode two:
 Debug mode three:
 0
 Use threads:
-false
+true
 Thread count:
-0
+6
 Start time:
 0
 Increment for threads(above 25000 cells):
 0.01
 Calculate these time steps base:
-0
-0
-1
+0.2
+15
+0.2
 <<END>>

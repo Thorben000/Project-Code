@@ -20,7 +20,7 @@ public:
     point center;
     int neighbors[6];
     int id;
-
+    int declaredNighbours;
     cell();
     cell(face face1,face face2,face face3,face face4,face face5,face face6);
     void setVolocity(velocity volocity);

@@ -10,6 +10,4 @@ out.perf
 perf.data
 perf.data.old
 out.folded
-*.exe
-FluidSim
 .cache/*

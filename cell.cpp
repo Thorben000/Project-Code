@@ -10,23 +10,18 @@
 #include <iostream>
 #include <cmath>
 #include <vector>
-cell::cell(): neighbors { -1, -1, -1, -1, -1, 1}, id(-1) {
-    
-}
+cell::cell(){id=-1;declaredNighbours=0;};
 
 
 void cell::addNeighbour(int id_x){
-    for (int i = 0;i < 6;i++) {
-        if (neighbors[i] == -1) {
-            if(id_x==-1){
-                neighbors[i] = id;
-                return;
-            } else {
-                neighbors[i] = id_x;
-            }
-            break;
-        }
+    if(id_x==-1){
+        neighbors[declaredNighbours] = id;
+        declaredNighbours+=1;
+        return;
     }
+    neighbors[declaredNighbours] = id_x;
+    declaredNighbours+=1;
+    return;
 }
 
 cell::cell(face face1,face face2,face face3,face face4,face face5,face face6){
@@ -89,9 +84,9 @@ std::string cell::printGradient(velocity gradient[3]){
     return returnString;
 }
 std::string cell::printQ(double q_crit){
-    std::string returnString= "( ";
+    std::string returnString = "";
     returnString += std::to_string(q_crit);
-    returnString += ")\n";
+    returnString += "\n";
     return returnString;
 }
 double cell::trace_base(velocity gradient[3]){
@@ -110,7 +105,10 @@ double cell::trace_other(velocity gradient[3]){
 }
 
 double manual_abs(double d) {
-    return d > 0 ? d : -d;
+    if(d > 0){
+        return d;
+    }
+    return  -d;
     //return std::fabs(d);
 }
 
@@ -141,19 +139,19 @@ void cell::math(std::vector<cell> cells, cell_result* result){
     }
     double x_distance = manual_abs(center.x-cells[keys_x[1]].center.x);
     if (x_distance<manual_abs(center.x-cells[keys_x[0]].center.x)) {x_distance = manual_abs(center.x-cells[keys_x[0]].center.x);}
-
+    
     result->gradient[0] = velocity( (cells[keys_x[0]].internalVolocity.x-cells[keys_x[1]].internalVolocity.x)/(2*x_distance),
                             (cells[keys_x[0]].internalVolocity.y-cells[keys_x[1]].internalVolocity.y)/(2*x_distance),
                             (cells[keys_x[0]].internalVolocity.z-cells[keys_x[1]].internalVolocity.z)/(2*x_distance)
                         );
-    double y_distance = manual_abs(center.x-cells[keys_x[1]].center.x);
-    if (y_distance<manual_abs(center.x-cells[keys_x[0]].center.x)) {y_distance = manual_abs(center.x-cells[keys_x[0]].center.x);}
+    double y_distance = manual_abs(center.y-cells[keys_y[1]].center.y);
+    if (y_distance<manual_abs(center.y-cells[keys_y[0]].center.y)) {y_distance = manual_abs(center.y-cells[keys_y[0]].center.y);}
     result->gradient[1] = velocity( (cells[keys_y[0]].internalVolocity.x-cells[keys_y[1]].internalVolocity.x)/(2*y_distance),
                             (cells[keys_y[0]].internalVolocity.y-cells[keys_y[1]].internalVolocity.y)/(2*y_distance),
                             (cells[keys_y[0]].internalVolocity.z-cells[keys_y[1]].internalVolocity.z)/(2*y_distance)
                         );
-    double z_distance = manual_abs(center.x-cells[keys_x[1]].center.x);
-    if (z_distance<manual_abs(center.x-cells[keys_x[0]].center.x)) {z_distance = manual_abs(center.x-cells[keys_x[0]].center.x);}
+    double z_distance = manual_abs(center.z-cells[keys_z[1]].center.z);
+    if (z_distance<manual_abs(center.z-cells[keys_z[0]].center.z)) {z_distance = manual_abs(center.z-cells[keys_z[0]].center.z);}
     result->gradient[2] = velocity( (cells[keys_z[0]].internalVolocity.x-cells[keys_z[1]].internalVolocity.x)/(2*z_distance),
                             (cells[keys_z[0]].internalVolocity.y-cells[keys_z[1]].internalVolocity.y)/(2*z_distance),
                             (cells[keys_z[0]].internalVolocity.z-cells[keys_z[1]].internalVolocity.z)/(2*z_distance)
