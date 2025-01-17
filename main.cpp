@@ -161,7 +161,6 @@ int main(int, char**){
 
     int cell_amount=0;
     int face_amount=0;
-
     Config config {};
     load_config(&config);
 

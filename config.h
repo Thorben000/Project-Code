@@ -13,6 +13,8 @@ struct Config {
     int debug_one_step_three;
     bool use_threads;
     int thread_count;
+    bool time_step_one;
+    bool time_step_ten;
     double start_time;
     double increment;
     std::vector<double> calculate_steps;
