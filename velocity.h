@@ -10,5 +10,10 @@ public:
     double z;
     velocity();
     velocity(double x,double y,double z);
+    /*
+    
+    This class just saves the doubles needed for the x , y , z speeds
+    
+    */
 };
 #endif

@@ -2,7 +2,11 @@
 #define DEBUG_H
 
 #include <cstring>
+/*
 
+Please ignore completly was used for debuging
+
+*/
 #ifdef __WIN32__
     #define __PATH_SEP__ '\\'
 #else

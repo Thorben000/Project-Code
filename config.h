@@ -19,6 +19,11 @@ struct Config {
     double increment;
     std::vector<double> calculate_steps;
     int numberCalculateSteps;
+    /*
+    
+    class used as a wrapper class(a thing that just saves a lot of data) for all config options
+
+    */
 };
 
 void load_config(Config* config);

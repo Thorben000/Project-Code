@@ -22,19 +22,19 @@
 
 helper functions go down here
 */
-uint64_t getTimeMS(){
+uint64_t getTimeMS(){//gets the current time since 1950
     using namespace std::chrono;
     uint64_t ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
     return ms;
 };
-class cellMapSaver{
+class cellMapSaver{//helper class
     public:
     std::vector<cell> cells;
     cellMapSaver(int cell_count){
         
     };
 };
-void printValues(std::vector<cell> cells, int cellamount){
+void printValues(std::vector<cell> cells, int cellamount){//debug function unused as of the final code but usefull if something breaks
     std::cout<<LOC<<"Amount cells: "<<cellamount<<std::endl;
     for(int i=0;i<cellamount;i++){
         std::cout<<LOC<<"#####################################"<<std::endl<<"Cell ID: "<<i<<std::endl<<"Cell center: "<<cells[i].printCenter()<<std::endl<<"Cell internal volocity: "<<cells[i].printInternalVolocity()<<std::endl;
@@ -42,6 +42,13 @@ void printValues(std::vector<cell> cells, int cellamount){
     }
 }
 void printToFile(std::vector<cell> cells, std::vector<cell_result> cell_results, std::string extracted_number,std::string base_file_path,int cell_amount){//for now only does the gradient!!!
+    /*
+    
+    used to save the Grad(U) file
+
+
+    */
+    
     std::string file_path_grad_u = base_file_path + "/" + extracted_number + "/grad(U)";
     std::ofstream grad_u_file(file_path_grad_u);
     std::ifstream grad_u_template_file("templates/tensorfield.templ");
@@ -68,10 +75,12 @@ void printToFile(std::vector<cell> cells, std::vector<cell_result> cell_results,
     }
     line_grad_u = std::to_string(cell_amount)+"\n(\n";
     grad_u_file << line_grad_u;
+    //header done printing data
     for(int i=0;i<cell_amount;i++){
         grad_u_file << cells[i].printGradient(cell_results[i].gradient);
     }
     line_grad_u = ")\n;\n";
+    //data done printinf footer
     grad_u_file << line_grad_u;
     for(int i=0;i<27;i++){
         std::getline(grad_u_template_file,line_template_grad_u);
@@ -81,6 +90,11 @@ void printToFile(std::vector<cell> cells, std::vector<cell_result> cell_results,
     return;
 }
 void printToFileQ(std::vector<cell> cells, std::vector<cell_result> celL_results, std::string extracted_number,std::string base_file_path,int cell_amount){//for now only does the Q!!!
+    /*
+    
+    used to save the Q file
+
+    */
     std::string file_path_grad_u = base_file_path + "/" + extracted_number + "/Q";
     std::ofstream grad_u_file(file_path_grad_u);
     std::ifstream grad_u_template_file("templates/QCriterium.templ");
@@ -107,10 +121,12 @@ void printToFileQ(std::vector<cell> cells, std::vector<cell_result> celL_results
     }
     line_grad_u = std::to_string(cell_amount)+"\n(\n";
     grad_u_file << line_grad_u;
+    //header done printing data
     for(int i=0;i<cell_amount;i++){
         grad_u_file << cells[i].printQ(celL_results[i].q_crit);
     }
     line_grad_u = ")\n;\n";
+    //data done printinf footer
     grad_u_file << line_grad_u;
     for(int i=0;i<27;i++){
         std::getline(grad_u_template_file,line_template_grad_u);
@@ -119,7 +135,9 @@ void printToFileQ(std::vector<cell> cells, std::vector<cell_result> celL_results
     }
     return;
 }
-bool toBeRemoved(char c)
+
+
+bool toBeRemoved(char c)//helper function used to remove brakets
 {
     switch(c)
     {
@@ -132,6 +150,13 @@ bool toBeRemoved(char c)
 }
 
 void threadableMath(int cell_start_thread, int cell_end_thread,int threadNR, uint64_t start_time, std::vector<cell> cells, std::vector<cell_result>* results){
+    /*
+    
+    The function needed to allow for parallel processing of the data does the same as the main function but is 
+    assigned a range. As an example. lets say we have 10 threads and 1000 data points then each thread does the 
+    math for 100 data points.
+    
+    */
     int portion_of_then = 1;
     for(int i=cell_start_thread;i<cell_end_thread;i++){
         if(cells[i].id != -1){
@@ -443,6 +468,7 @@ int main(int, char**){
     double start;
     double end;
     double increment_time;
+    bool breakit=false;
     std::string filePath_velocities;
     std::string filePath_centers;
     std::string C_line;
@@ -450,16 +476,29 @@ int main(int, char**){
         start = config.calculate_steps[i];
         end = config.calculate_steps[i+1];
         increment_time = config.calculate_steps[i+2];
+        /*
+        
+        Start of a new time increment
+        
+        */
         std::cout << LOC << "start: " << start << " end: " << end << " increment " << increment_time << std::endl;
-        for(double n=start;n<=end;n+=increment_time){
+        for(double n=start;n<=end;n+=increment_time){//converts a double to a string and removes tailing zeros: 1.0000000000 is converted to 1
             std::string fileNumber = std::to_string(n);
             while (fileNumber.length() > 1) {
                 char c = fileNumber.back();
                 if (c != '0' && c != '.') {
                     break;
                 }
+                if(c=='.'){
+                    breakit=true;
+                }
                 fileNumber.pop_back();
+                if(breakit){
+                    break;
+                }
+
             }
+            //create the file path to open it and opens the file streams
             filePath_velocities = config.filePath;
             filePath_velocities += "/";
             filePath_velocities += fileNumber;
@@ -473,13 +512,14 @@ int main(int, char**){
             line="";
             C_line="";
             number_of_entries=-1;
+            //begins reading in
             for(int i=0;i<21;i++){
                 std::getline(velocity_file,line);//skips the first 19 lines of the file unimportant
                 std::getline(center_file,C_line);
             }
             std::getline(velocity_file,line);
             std::getline(center_file,C_line);
-            
+            //dertermine how much we will need to read
             number_of_entries = std::stoi(line);
             std::cout << LOC << "entries: " << number_of_entries << std::endl;
             std::getline(velocity_file,line);//gets rid of a unwanted line
@@ -534,34 +574,41 @@ int main(int, char**){
                 cells[i].center = point(c_value[0],c_value[1],c_value[2]);
             }
             velocity_file.close();
+            //finished reading in volocities
             std::cout << LOC << "Done loading velocities" <<std::endl;
             if(config.debug_two){
                 printValues(cells,cell_amount);
             }
             uint64_t start_time;
-            start_time = getTimeMS();
+            start_time = getTimeMS();//for time keeping
 
             int portions_of_then = 1;
-            if(config.use_threads){
+            if(config.use_threads){//splits based on if threads are to be used, a thread is a parrallel process to the main thread
                 if (config.thread_count < 1) panic("Must use at least one thread, but a config value of " << config.thread_count << " was provided");
                 int num_threads = config.thread_count;
-                num_threads += 1; // one residual thread
-                int thread_load = cell_amount / (num_threads-1);
+                num_threads += 1; // one residual thread //determine how many threads we need
+                int thread_load = cell_amount / (num_threads-1);//determine the load of a thread
                 std::cout<<LOC<<"trying to create Threads number:"<<num_threads<<std::endl;
                 std::thread* threads[num_threads];
 
                 for(int i=0;i<num_threads;i++){
                     std::cout<<LOC<<"Thread created"<<std::endl;
+                    /*
+                    
+                    creates thethreads
+                    
+                    */
                     threads[i] = new std::thread(threadableMath,thread_load*i, std::min(thread_load*(i+1), cell_amount),i,start_time, cells, &results);
                 }
                 std::cout<<LOC<<"All threads created"<<std::endl;
                 for(int i=0;i<num_threads;i++){
                     threads[i]->join();
+                    //waits for the threads to all be done
                 }
                 std::cout<<LOC<<"All threads done"<<std::endl;
             }
             else{
-                for(int i=0;i<cell_amount;i++){
+                for(int i=0;i<cell_amount;i++){//if no threads are used then the main function does the math itself
                     cells[i].math(cells, &results[i]);
                     if((float)i/cell_amount >= 0.001*portions_of_then){
                         float t = (getTimeMS()-start_time) / 1000.0;
@@ -572,6 +619,7 @@ int main(int, char**){
                 }
             }
             std::cout<<LOC<<"The math took: "<<(getTimeMS()-start_time) / 1000.0 <<"s"<<std::endl;
+            //prints to file
             printToFile(cells, results, fileNumber, config.filePath, cell_amount);
             printToFileQ(cells, results, fileNumber, config.filePath, cell_amount);
         }

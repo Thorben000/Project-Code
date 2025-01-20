@@ -40,7 +40,11 @@ void load_config(Config* config){
     std::string filename = "config";
     std::ifstream config_file(filename);
     assert_file_valid(config_file, filename);
-
+    /*
+    
+    Declaration of all inputs, the string is what is needed to be writen in config first followed by the declaration of the pointer entity(a struct used to later asign the values)
+    
+    */
     std::unordered_map <std::string, pointer_entity> map_pointers {};
     map_pointers["Name of Dataset"] =  pointer_entity {.type=PT_STRING,.pointer = &config->filePath, .flags = PF_NONE};
     map_pointers["Debug mode one"] =  pointer_entity {.type=PT_INT,.pointer = &config->debug_one, .flags = PF_NONE};
@@ -65,29 +69,58 @@ void load_config(Config* config){
     double start;
     double end;
     double increm;
+    /*
     
+    beginning of readin the config file
+
+    */
     while(std::getline(config_file,line)){
         if(line == "<<END>>"){
+            /*
+            
+            Ends the config
+
+            */
             break;
         }
         if(!std::getline(config_file,line2)){
             panic("Unexpected EOF while parsing config");
+            /*
+            
+            Error handeling
+
+            */
         }
         if (line.back() != ':') {
             panic("Expect key '" << line << "' to end with ':'");
+            /*
+            
+            Error handeling
+
+            */
         }
         line.pop_back();
         std::cout << LOC << "parsing cfg key '" << line << "'" << std::endl;
         if (map_pointers.count(line) == 0) { // key doesnt exist
             panic("Invalid config key '" << line << "'");
+            /*
+            
+            Error handeling
+
+            */
         }
         if ((map_pointers[line].flags & PF_SET) != 0 && (map_pointers[line].flags & PF_MULTI) == 0) {
             panic("Config key '" << line << "' is set already");
+            /*
+            
+            Error handeling
+
+            */
         }
         map_pointers[line].flags |= PF_SET;
         switch (map_pointers[line].type)
         {
-        case PT_STRING:
+        case PT_STRING: //saves string at the coresponding position
             temp_string_pointer = (std::string*) map_pointers[line].pointer;
             *temp_string_pointer = line2;
             break;
@@ -99,12 +132,12 @@ void load_config(Config* config){
                 panic("Invalid argument for '" << line << "': '" << line2 << "'.\nExpected <int>");
             }
             break;
-        case PT_BOOL:
+        case PT_BOOL://converts a string to a bool and saves it at the coresponding position
             temp_bool_pointer = (bool*) map_pointers[line].pointer;
             if (line2 != "true" && line2 != "false") panic("Invalid argument for '" << line << "': '" << line2 << "'.\nExpected [true|false]");
             *temp_bool_pointer = line2 == "true";
             break;
-        case PT_DOUBLE:
+        case PT_DOUBLE://converts a string to a double and saves it at the coresponding position
             temp_double_pointer = (double*) map_pointers[line].pointer;
             try {
                 *temp_double_pointer = std::stod(line2);
@@ -112,7 +145,7 @@ void load_config(Config* config){
                 panic("Invalid argument for '" << line << "': '" << line2 << "'.\nExpected <double>");
             }
             break;
-        case PT_DOUBLE_VECTOR:
+        case PT_DOUBLE_VECTOR://converts a string to a double and saves it at the coresponding vector
             temp_double_vector_pointer = (std::vector<double>*) map_pointers[line].pointer;
             temp_int8_t_pointer = (int*) map_pointers[line].pointer_2;
             try {
@@ -130,7 +163,7 @@ void load_config(Config* config){
             *temp_int8_t_pointer += 1;
             break;
         default:
-            panic("Unreachable");
+            panic("Unreachable");//something bad happened we should NOT reach this point
         }
     }
     for (const auto & [key, value] : map_pointers) {

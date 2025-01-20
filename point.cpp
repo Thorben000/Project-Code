@@ -1,6 +1,11 @@
 #ifndef POINT_CPP
 #define POINT_CPP
 #include "point.h"
+/*
+
+This file contains the constructors for the point class
+
+*/
 point::point(){
     x=0;
     y=0;

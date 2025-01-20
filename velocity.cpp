@@ -1,4 +1,9 @@
 #include "velocity.h"
+/*
+
+This file contains the constructors for the velocity class
+
+*/
 velocity::velocity(){
     x=0;
     y=0;
