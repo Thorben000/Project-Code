@@ -15,8 +15,6 @@ struct Config {
     int thread_count;
     bool time_step_one;
     bool time_step_ten;
-    double start_time;
-    double increment;
     std::vector<double> calculate_steps;
     int numberCalculateSteps;
     /*

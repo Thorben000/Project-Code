@@ -54,11 +54,7 @@ void load_config(Config* config){
     map_pointers["Debug mode one stepping two"] = pointer_entity {.type=PT_INT,.pointer = &config->debug_one_step_two, .flags = PF_NONE};
     map_pointers["Debug mode one stepping three"] = pointer_entity {.type=PT_INT,.pointer = &config->debug_one_step_three, .flags = PF_NONE};
     map_pointers["Use threads"] = pointer_entity {.type=PT_BOOL,.pointer = &config->use_threads, .flags = PF_NONE};
-    map_pointers["Calc 1"] = pointer_entity {.type=PT_BOOL,.pointer = &config->time_step_one, .flags = PF_NONE};
-    map_pointers["Calc 10"] = pointer_entity {.type=PT_BOOL,.pointer = &config->time_step_ten, .flags = PF_NONE};
     map_pointers["Thread count"] = pointer_entity {.type=PT_INT,.pointer = &config->thread_count, .flags = PF_NONE};
-    map_pointers["Start time"] = pointer_entity {.type=PT_DOUBLE,.pointer = &config->start_time, .flags = PF_NONE};
-    map_pointers["Increment for threads(above 25000 cells)"] = pointer_entity {.type=PT_DOUBLE,.pointer=&config->increment, .flags = PF_NONE};
     map_pointers["Calculate these time steps base"] = pointer_entity {.type=PT_DOUBLE_VECTOR,.pointer=&config->calculate_steps,.pointer_2=&config->numberCalculateSteps, .flags = PF_NONE};//given in the following format--> start_value \n end_value \n increments
     map_pointers["Calculate these time steps add"] = pointer_entity {.type=PT_DOUBLE_VECTOR,.pointer=&config->calculate_steps,.pointer_2=&config->numberCalculateSteps, .flags = PF_MULTI|PF_OPT};//given in the following format--> start_value \n end_value \n increments
     std::string* temp_string_pointer;
